@@ -4,4 +4,4 @@ sqlalchemy
 bcrypt
 python-multipart
 jinja2
-pdfplumber
+aiofiles

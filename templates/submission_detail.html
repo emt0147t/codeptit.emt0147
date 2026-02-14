@@ -17,7 +17,7 @@
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
             <div class="bg-gray-50 p-3 rounded-lg">
                 <div class="text-xs text-gray-500">Trạng thái</div>
-                <div class="text-sm font-semibold mt-1
+                <div data-field="status" class="text-sm font-semibold mt-1
                     {% if submission.status == 'Accepted' %}status-accepted
                     {% elif submission.status == 'Wrong Answer' %}status-wrong
                     {% elif submission.status == 'Time Limit Exceeded' %}status-tle
@@ -29,11 +29,11 @@
             </div>
             <div class="bg-gray-50 p-3 rounded-lg">
                 <div class="text-xs text-gray-500">Điểm</div>
-                <div class="text-sm font-semibold mt-1">{{ "%.0f"|format(submission.score) }}/100</div>
+                <div data-field="score" class="text-sm font-semibold mt-1">{{ "%.0f"|format(submission.score) }}/100</div>
             </div>
             <div class="bg-gray-50 p-3 rounded-lg">
                 <div class="text-xs text-gray-500">Thời gian</div>
-                <div class="text-sm font-semibold mt-1">{{ "%.0f"|format(submission.time_ms) }} ms</div>
+                <div data-field="time" class="text-sm font-semibold mt-1">{{ "%.0f"|format(submission.time_ms) }} ms</div>
             </div>
             <div class="bg-gray-50 p-3 rounded-lg">
                 <div class="text-xs text-gray-500">Ngôn ngữ</div>
@@ -46,21 +46,20 @@
         </div>
 
         {% if submission.status == 'Pending' %}
-        <div class="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mb-4">
-            ⏳ Bài đang được chấm... <a href="" class="underline">Tải lại trang</a>
+        <div id="pending-banner" class="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mb-4">
+            ⏳ Bài đang được chấm...
+            <span class="inline-block ml-2 animate-spin">⟳</span>
         </div>
         {% endif %}
 
         <!-- Compile Error -->
-        {% if submission.compile_error %}
-        <div class="mb-6">
+        <div id="compile-error-section" class="mb-6 {% if not submission.compile_error %}hidden{% endif %}">
             <h3 class="text-sm font-medium text-gray-500 mb-2">Lỗi biên dịch</h3>
-            <pre class="bg-red-50 text-red-700 p-4 rounded-lg text-sm overflow-x-auto">{{ submission.compile_error }}</pre>
+            <pre class="bg-red-50 text-red-700 p-4 rounded-lg text-sm overflow-x-auto">{{ submission.compile_error or '' }}</pre>
         </div>
-        {% endif %}
 
         <!-- Test Results -->
-        {% if results %}
+        <div id="results-section" class="{% if not results %}hidden{% endif %}">
         <h3 class="text-sm font-medium text-gray-500 mb-2">Chi tiết từng test</h3>
         <div class="bg-white border rounded-lg overflow-hidden">
             <table class="min-w-full">
@@ -71,7 +70,7 @@
                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody id="results-tbody" class="divide-y divide-gray-200">
                     {% for r in results %}
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-2 text-sm text-gray-600">Test {{ loop.index }}</td>
@@ -88,7 +87,7 @@
                 </tbody>
             </table>
         </div>
-        {% endif %}
+        </div>
 
         <!-- Source Code -->
         <div class="mt-6">
@@ -101,8 +100,89 @@
 {% if submission.status == 'Pending' %}
 {% block scripts %}
 <script>
-    // Auto-refresh when pending
-    setTimeout(() => { location.reload(); }, 2000);
+(function() {
+    const sid = {{ submission.id }};
+    let polling = true;
+    let interval = 1500;
+
+    async function checkStatus() {
+        if (!polling) return;
+        try {
+            const res = await fetch('/api/submission/' + sid + '/status');
+            if (!res.ok) return;
+            const data = await res.json();
+
+            // Update status badge
+            const statusEl = document.querySelector('[data-field="status"]');
+            if (statusEl) {
+                statusEl.textContent = data.status;
+                statusEl.className = 'text-sm font-semibold mt-1 ' + getStatusClass(data.status);
+            }
+
+            // Update score
+            const scoreEl = document.querySelector('[data-field="score"]');
+            if (scoreEl) scoreEl.textContent = data.score + '/100';
+
+            // Update time
+            const timeEl = document.querySelector('[data-field="time"]');
+            if (timeEl) timeEl.textContent = data.time_ms + ' ms';
+
+            // Update pending banner
+            const banner = document.getElementById('pending-banner');
+
+            if (data.done) {
+                polling = false;
+                if (banner) banner.remove();
+
+                // Show compile error if any
+                if (data.compile_error) {
+                    const ceDiv = document.getElementById('compile-error-section');
+                    if (ceDiv) {
+                        ceDiv.classList.remove('hidden');
+                        ceDiv.querySelector('pre').textContent = data.compile_error;
+                    }
+                }
+
+                // Update test results table
+                if (data.results && data.results.length > 0) {
+                    const tbody = document.getElementById('results-tbody');
+                    const section = document.getElementById('results-section');
+                    if (tbody && section) {
+                        section.classList.remove('hidden');
+                        tbody.innerHTML = '';
+                        data.results.forEach(function(r) {
+                            const tr = document.createElement('tr');
+                            tr.className = 'hover:bg-gray-50';
+                            tr.innerHTML = '<td class="px-4 py-2 text-sm text-gray-600">Test ' + r.index + '</td>' +
+                                '<td class="px-4 py-2 text-sm ' + getStatusClass(r.status) + '">' + r.status + '</td>' +
+                                '<td class="px-4 py-2 text-sm text-gray-500">' + r.time_ms + ' ms</td>';
+                            tbody.appendChild(tr);
+                        });
+                    }
+                }
+            } else {
+                setTimeout(checkStatus, interval);
+                interval = Math.min(interval + 500, 5000);
+            }
+        } catch (e) {
+            setTimeout(checkStatus, 3000);
+        }
+    }
+
+    function getStatusClass(status) {
+        switch(status) {
+            case 'Accepted': return 'status-accepted';
+            case 'Wrong Answer': return 'status-wrong';
+            case 'Time Limit Exceeded': return 'status-tle';
+            case 'Compilation Error': return 'status-ce';
+            case 'Runtime Error': return 'status-re';
+            case 'Memory Limit Exceeded': return 'status-mle';
+            default: return 'status-pending';
+        }
+    }
+
+    setTimeout(checkStatus, interval);
+})();
 </script>
 {% endblock %}
 {% endif %}

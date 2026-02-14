@@ -2,27 +2,88 @@
 {% block title %}Test Cases - {{ problem.code }}{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto">
+<div class="max-w-5xl mx-auto">
+    <!-- Header -->
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">
-            Test Cases — <a href="/problem/{{ problem.code }}" class="text-blue-600 hover:underline">{{ problem.code }}</a>
-        </h1>
-        <span class="text-gray-500">{{ testcases|length }} test(s)</span>
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">
+                Test Cases — <a href="/problem/{{ problem.code }}" class="text-blue-600 hover:underline">{{ problem.code }}</a>
+            </h1>
+            <p class="text-gray-500 text-sm mt-1">{{ problem.title }}</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-sm text-gray-500">{{ testcases|length }} test(s)</span>
+            <span class="text-sm text-gray-400">|</span>
+            <span class="text-sm">
+                <span class="text-blue-500">{{ testcases|selectattr('is_sample')|list|length }} sample</span> /
+                <span class="text-orange-500">{{ testcases|rejectattr('is_sample')|list|length }} hidden</span>
+            </span>
+        </div>
     </div>
 
-    <!-- Add Test Case -->
-    <div class="bg-white rounded-lg shadow-sm border p-6 mb-6">
-        <h3 class="text-lg font-semibold mb-4">Thêm Test Case</h3>
+    {% if request.query_params.get('msg') %}
+    <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
+        ✓ {{ request.query_params.get('msg') }}
+    </div>
+    {% endif %}
+
+    <!-- Time/Memory Limits -->
+    <div class="bg-white rounded-lg shadow-sm border p-5 mb-6">
+        <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+            ⏱ Giới hạn Time / Memory
+        </h3>
+        <form method="POST" action="/admin/problem/{{ problem.code }}/update-limits" class="flex items-end gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Time Limit (giây)</label>
+                <input type="number" name="time_limit" step="0.1" min="0.1" max="30"
+                    value="{{ problem.time_limit or 1.0 }}"
+                    class="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Memory Limit (MB)</label>
+                <input type="number" name="memory_limit" min="16" max="1024"
+                    value="{{ problem.memory_limit or 256 }}"
+                    class="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            </div>
+            <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition">
+                Cập nhật
+            </button>
+        </form>
+        <p class="text-xs text-gray-400 mt-2">
+            💡 Để kiểm tra tối ưu: đặt time limit vừa đủ cho thuật toán tối ưu pass,
+            nhưng brute force sẽ bị TLE. Ví dụ: O(n log n) = 1s, O(n²) sẽ TLE với n=100000.
+        </p>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="flex border-b mb-6">
+        <button onclick="showTab('single')" id="tab-single"
+            class="px-4 py-2 border-b-2 border-blue-600 text-blue-600 font-medium text-sm">
+            Thêm từng test
+        </button>
+        <button onclick="showTab('bulk')" id="tab-bulk"
+            class="px-4 py-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm">
+            Thêm hàng loạt (Bulk)
+        </button>
+        <button onclick="showTab('file')" id="tab-file"
+            class="px-4 py-2 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm">
+            Upload file JSON
+        </button>
+    </div>
+
+    <!-- Single Test Case Add -->
+    <div id="panel-single" class="bg-white rounded-lg shadow-sm border p-6 mb-6">
         <form method="POST" action="/admin/problem/{{ problem.code }}/testcases/add">
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Input</label>
-                    <textarea name="input_data" rows="4" required
+                    <textarea name="input_data" rows="5" required
                         class="code-editor w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"></textarea>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Expected Output</label>
-                    <textarea name="expected_output" rows="4" required
+                    <textarea name="expected_output" rows="5" required
                         class="code-editor w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"></textarea>
                 </div>
             </div>
@@ -39,16 +100,110 @@
         </form>
     </div>
 
+    <!-- Bulk Paste -->
+    <div id="panel-bulk" class="bg-white rounded-lg shadow-sm border p-6 mb-6 hidden">
+        <form method="POST" action="/admin/problem/{{ problem.code }}/testcases/bulk">
+            <div class="mb-3">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Dán nhiều test cases (cách nhau bởi <code class="bg-gray-100 px-1 rounded">---</code>,
+                    input và output cách nhau bởi <code class="bg-gray-100 px-1 rounded">|||</code>)
+                </label>
+                <textarea name="bulk_data" rows="12" placeholder="5
+1 2 3 4 5
+|||
+15
+---
+3
+10 20 30
+|||
+60
+---
+1
+42
+|||
+42"
+                    class="code-editor w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"></textarea>
+            </div>
+            <div class="flex items-center justify-between">
+                <p class="text-xs text-gray-400">
+                    Mỗi test: INPUT ||| OUTPUT, cách nhau bởi ---
+                </p>
+                <button type="submit"
+                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg text-sm transition">
+                    Thêm tất cả
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- File Upload -->
+    <div id="panel-file" class="bg-white rounded-lg shadow-sm border p-6 mb-6 hidden">
+        <form method="POST" action="/admin/problem/{{ problem.code }}/testcases/bulk" enctype="multipart/form-data">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Upload file JSON chứa test cases
+                </label>
+                <input type="file" name="bulk_file" accept=".json"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <p class="text-xs text-gray-400 mt-2">
+                    Format: <code class="bg-gray-100 px-1 rounded">[{"input": "...", "output": "..."}, ...]</code>
+                </p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                <p class="text-sm font-medium text-gray-600 mb-1">Ví dụ file JSON:</p>
+                <pre class="text-xs text-gray-500">[
+  {"input": "5\n1 2 3 4 5", "output": "15"},
+  {"input": "3\n10 20 30", "output": "60"},
+  {"input": "100000\n1 2 3 ... 100000", "output": "5000050000"}
+]</pre>
+            </div>
+            <button type="submit"
+                class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg text-sm transition">
+                Upload & Import
+            </button>
+        </form>
+    </div>
+
+    <!-- Actions Bar -->
+    {% if testcases|rejectattr('is_sample')|list|length > 0 %}
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-700">Danh sách Test Cases</h2>
+        <form method="POST" action="/admin/problem/{{ problem.code }}/testcases/delete-all"
+            onsubmit="return confirm('Xóa tất cả hidden test cases? (Sample tests giữ nguyên)')">
+            <button type="submit" class="text-red-500 hover:text-red-700 text-sm border border-red-200 px-3 py-1 rounded hover:bg-red-50 transition">
+                🗑 Xóa tất cả hidden tests
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Test Case Strategy Guide -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <h4 class="text-sm font-bold text-blue-800 mb-2">📋 Hướng dẫn thêm test case kiểm tra tối ưu</h4>
+        <div class="text-xs text-blue-700 space-y-1">
+            <p>• <strong>2-3 test nhỏ</strong> (sample, n≤10): Kiểm tra đúng logic cơ bản</p>
+            <p>• <strong>2-3 test trung bình</strong> (n=100~1000): Kiểm tra edge cases</p>
+            <p>• <strong>2-3 test lớn</strong> (n=10⁵~10⁶): Code brute force O(n²) sẽ bị TLE</p>
+            <p>• <strong>1-2 test biên</strong>: n=0, n=1, giá trị max, mảng đã sort, toàn phần tử giống nhau</p>
+            <p>💡 Kết hợp với <strong>time limit thấp</strong> (1-2s) để chỉ thuật toán tối ưu mới pass được</p>
+        </div>
+    </div>
+
     <!-- Existing Test Cases -->
     <div class="space-y-4">
         {% for tc in testcases %}
-        <div class="bg-white rounded-lg shadow-sm border p-4">
+        <div class="bg-white rounded-lg shadow-sm border p-4 {% if tc.is_sample %}border-l-4 border-l-blue-400{% else %}border-l-4 border-l-orange-300{% endif %}">
             <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-2">
                     <span class="font-medium text-gray-700">Test #{{ loop.index }}</span>
                     {% if tc.is_sample %}
-                    <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded">Sample</span>
+                    <span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded font-medium">Sample</span>
+                    {% else %}
+                    <span class="bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded font-medium">Hidden</span>
                     {% endif %}
+                    <span class="text-xs text-gray-400">
+                        (input: {{ tc.input_data|length }} chars)
+                    </span>
                 </div>
                 <form method="POST" action="/admin/testcase/{{ tc.id }}/delete"
                     onsubmit="return confirm('Xóa test case này?')">
@@ -58,19 +213,37 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <div class="text-xs text-gray-500 mb-1">Input</div>
-                    <pre class="bg-gray-50 p-2 rounded text-sm overflow-x-auto max-h-32">{{ tc.input_data }}</pre>
+                    <pre class="bg-gray-50 p-2 rounded text-sm overflow-x-auto max-h-32 overflow-y-auto">{{ tc.input_data[:2000] }}{% if tc.input_data|length > 2000 %}...{% endif %}</pre>
                 </div>
                 <div>
                     <div class="text-xs text-gray-500 mb-1">Expected Output</div>
-                    <pre class="bg-gray-50 p-2 rounded text-sm overflow-x-auto max-h-32">{{ tc.expected_output }}</pre>
+                    <pre class="bg-gray-50 p-2 rounded text-sm overflow-x-auto max-h-32 overflow-y-auto">{{ tc.expected_output[:2000] }}{% if tc.expected_output|length > 2000 %}...{% endif %}</pre>
                 </div>
             </div>
         </div>
         {% else %}
-        <div class="text-center text-gray-500 py-8">
+        <div class="text-center text-gray-500 py-8 bg-white rounded-lg border">
             Chưa có test case nào. Thêm test case ở phía trên.
         </div>
         {% endfor %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showTab(name) {
+    ['single', 'bulk', 'file'].forEach(function(t) {
+        document.getElementById('panel-' + t).classList.toggle('hidden', t !== name);
+        var tab = document.getElementById('tab-' + t);
+        if (t === name) {
+            tab.classList.add('border-blue-600', 'text-blue-600');
+            tab.classList.remove('border-transparent', 'text-gray-500');
+        } else {
+            tab.classList.remove('border-blue-600', 'text-blue-600');
+            tab.classList.add('border-transparent', 'text-gray-500');
+        }
+    });
+}
+</script>
 {% endblock %}

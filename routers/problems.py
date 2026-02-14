@@ -1,11 +1,13 @@
 """
 Problem routes: list, detail, create (admin).
 """
-from fastapi import APIRouter, Request, Depends, Form, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Request, Depends, Form, HTTPException, UploadFile, File
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import Optional
+import json
+import io
 
 from database import get_db
 from models import Problem, TestCase, Submission, SubmissionStatus
@@ -303,4 +305,136 @@ async def delete_testcase(
 
     return RedirectResponse(
         url=f"/admin/problem/{problem_code}/testcases", status_code=302
+    )
+
+
+@router.post("/admin/problem/{problem_code}/testcases/bulk")
+async def bulk_add_testcases(
+    request: Request,
+    problem_code: str,
+    bulk_data: str = Form(""),
+    bulk_file: UploadFile = File(None),
+    db: Session = Depends(get_db)
+):
+    """Bulk add test cases. Supports two formats:
+    1. Paste text with --- separator between test cases, and |||  between input/output
+    2. Upload JSON file with [{"input": "...", "output": "..."}, ...]
+    """
+    user = require_admin(request, db)
+    problem = db.query(Problem).filter(Problem.code == problem_code).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+
+    max_order = db.query(TestCase).filter(
+        TestCase.problem_id == problem.id
+    ).count()
+
+    added = 0
+
+    if bulk_file and bulk_file.filename:
+        # JSON file upload
+        content = await bulk_file.read()
+        text = content.decode("utf-8")
+
+        if bulk_file.filename.endswith(".json"):
+            tests = json.loads(text)
+            for t in tests:
+                inp = t.get("input", "").strip()
+                out = t.get("output", t.get("expected_output", "")).strip()
+                if inp and out:
+                    tc = TestCase(
+                        problem_id=problem.id,
+                        input_data=inp,
+                        expected_output=out,
+                        is_sample=False,
+                        order=max_order + added
+                    )
+                    db.add(tc)
+                    added += 1
+        else:
+            # Plain text format: pairs of files or --- separated
+            bulk_data = text
+
+    if bulk_data and bulk_data.strip():
+        # Parse pasted text: each test separated by ---
+        # Input and output separated by |||
+        tests_raw = bulk_data.strip().split("---")
+        for block in tests_raw:
+            block = block.strip()
+            if not block:
+                continue
+            if "|||" in block:
+                parts = block.split("|||")
+                inp = parts[0].strip()
+                out = parts[1].strip() if len(parts) > 1 else ""
+            else:
+                # Try splitting by empty line
+                lines = block.split("\n")
+                mid = len(lines) // 2
+                inp = "\n".join(lines[:mid]).strip()
+                out = "\n".join(lines[mid:]).strip()
+            if inp and out:
+                tc = TestCase(
+                    problem_id=problem.id,
+                    input_data=inp,
+                    expected_output=out,
+                    is_sample=False,
+                    order=max_order + added
+                )
+                db.add(tc)
+                added += 1
+
+    db.commit()
+
+    return RedirectResponse(
+        url=f"/admin/problem/{problem_code}/testcases?msg=Added+{added}+test+cases",
+        status_code=302
+    )
+
+
+@router.post("/admin/problem/{problem_code}/testcases/delete-all")
+async def delete_all_testcases(
+    request: Request,
+    problem_code: str,
+    db: Session = Depends(get_db)
+):
+    """Delete all non-sample test cases."""
+    user = require_admin(request, db)
+    problem = db.query(Problem).filter(Problem.code == problem_code).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+
+    deleted = db.query(TestCase).filter(
+        TestCase.problem_id == problem.id,
+        TestCase.is_sample == False
+    ).delete()
+    db.commit()
+
+    return RedirectResponse(
+        url=f"/admin/problem/{problem_code}/testcases?msg=Deleted+{deleted}+hidden+test+cases",
+        status_code=302
+    )
+
+
+@router.post("/admin/problem/{problem_code}/update-limits")
+async def update_problem_limits(
+    request: Request,
+    problem_code: str,
+    time_limit: float = Form(1.0),
+    memory_limit: int = Form(256),
+    db: Session = Depends(get_db)
+):
+    """Update time/memory limits for a problem."""
+    user = require_admin(request, db)
+    problem = db.query(Problem).filter(Problem.code == problem_code).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+
+    problem.time_limit = max(0.1, min(time_limit, 30.0))
+    problem.memory_limit = max(16, min(memory_limit, 1024))
+    db.commit()
+
+    return RedirectResponse(
+        url=f"/admin/problem/{problem_code}/testcases?msg=Limits+updated",
+        status_code=302
     )

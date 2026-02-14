@@ -2,7 +2,7 @@
 Submission routes: submit code, view results.
 """
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 import threading
@@ -93,6 +93,34 @@ async def submission_detail(
         "submission": submission,
         "problem": problem,
         "results": submission.results,
+    })
+
+
+@router.get("/api/submission/{submission_id}/status")
+async def submission_status_api(
+    submission_id: int,
+    db: Session = Depends(get_db)
+):
+    """JSON endpoint for polling submission status without page reload."""
+    submission = db.query(Submission).filter(Submission.id == submission_id).first()
+    if not submission:
+        return JSONResponse({"error": "not found"}, status_code=404)
+
+    results = []
+    for i, r in enumerate(submission.results):
+        results.append({
+            "index": i + 1,
+            "status": str(r.status),
+            "time_ms": round(r.time_ms or 0),
+        })
+
+    return JSONResponse({
+        "status": str(submission.status),
+        "score": round(submission.score or 0),
+        "time_ms": round(submission.time_ms or 0),
+        "compile_error": submission.compile_error or "",
+        "results": results,
+        "done": str(submission.status) != "Pending",
     })
 
 
