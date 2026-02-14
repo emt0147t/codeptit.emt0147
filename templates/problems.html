@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Danh sách bài tập - Online Judge{% endblock %}
+
+{% block content %}
+<!-- Category breadcrumb -->
+{% if category_info %}
+<nav class="mb-4 text-sm">
+    <a href="/" class="text-gray-400 hover:text-blue-600">Trang chủ</a>
+    <span class="text-gray-300 mx-1">›</span>
+    <a href="/problems" class="text-gray-400 hover:text-blue-600">Bài tập</a>
+    <span class="text-gray-300 mx-1">›</span>
+    <span class="text-gray-600 font-medium">{{ category_info.icon }} {{ category_info.name }}</span>
+</nav>
+{% endif %}
+
+<div class="mb-6">
+    {% if category_info %}
+    <div class="flex items-center mb-4">
+        <span class="text-4xl mr-4">{{ category_info.icon }}</span>
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">{{ category_info.name }}</h1>
+            <p class="text-gray-500 text-sm">{{ category_info.description }}</p>
+        </div>
+    </div>
+    {% else %}
+    <h1 class="text-2xl font-bold text-gray-800 mb-4">Danh sách bài tập</h1>
+    {% endif %}
+
+    <!-- Search & Filter -->
+    <form method="GET" action="{% if category %}/category/{{ category }}{% else %}/problems{% endif %}" class="flex gap-4 mb-4">
+        <input type="text" name="search" value="{{ search }}" placeholder="Tìm theo mã bài hoặc tên..."
+            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+        <select name="difficulty" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+            <option value="">Tất cả độ khó</option>
+            <option value="Easy" {% if difficulty == "Easy" %}selected{% endif %}>Easy</option>
+            <option value="Medium" {% if difficulty == "Medium" %}selected{% endif %}>Medium</option>
+            <option value="Hard" {% if difficulty == "Hard" %}selected{% endif %}>Hard</option>
+        </select>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
+            Tìm kiếm
+        </button>
+    </form>
+</div>
+
+<!-- Problem Table -->
+<div class="bg-white rounded-lg shadow-sm border overflow-hidden">
+    <table class="min-w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-12">TT</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-28">Mã bài</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên bài</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-24">Độ khó</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-28">AC Rate</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-20">Nộp</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+            {% for p in problems %}
+            <tr class="hover:bg-gray-50 transition">
+                <td class="px-6 py-4 text-gray-400">
+                    {% if p.id in solved_ids %}
+                        <span class="text-green-500 text-lg">✓</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4">
+                    <a href="/problem/{{ p.code }}" class="text-blue-600 font-mono font-medium hover:underline">
+                        {{ p.code }}
+                    </a>
+                </td>
+                <td class="px-6 py-4">
+                    <a href="/problem/{{ p.code }}" class="text-gray-800 hover:text-blue-600 font-medium">
+                        {{ p.title }}
+                    </a>
+                </td>
+                <td class="px-6 py-4">
+                    <span class="diff-{{ p.difficulty|lower }} text-sm font-medium px-2 py-1 rounded
+                        {% if p.difficulty == 'Easy' %}bg-green-50
+                        {% elif p.difficulty == 'Medium' %}bg-yellow-50
+                        {% else %}bg-red-50{% endif %}">
+                        {{ p.difficulty }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-gray-500 text-sm">
+                    {% if p.total_submissions > 0 %}
+                        {{ "%.1f"|format(p.accepted_count / p.total_submissions * 100) }}%
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 text-gray-500 text-sm">{{ p.total_submissions }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                    Chưa có bài tập nào. {% if user and user.is_admin %}
+                    <a href="/admin/problems/add" class="text-blue-600 hover:underline">Thêm bài tập mới</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+{% set base_url = "/category/" + category if category else "/problems" %}
+<div class="mt-6 flex justify-center space-x-2">
+    {% if page > 1 %}
+    <a href="{{ base_url }}?page={{ page - 1 }}&search={{ search }}&difficulty={{ difficulty }}"
+        class="px-4 py-2 bg-white border rounded hover:bg-gray-50">← Trước</a>
+    {% endif %}
+
+    {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}
+        <span class="px-4 py-2 bg-blue-600 text-white rounded">{{ p }}</span>
+        {% elif p <= 3 or p >= total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+        <a href="{{ base_url }}?page={{ p }}&search={{ search }}&difficulty={{ difficulty }}"
+            class="px-4 py-2 bg-white border rounded hover:bg-gray-50">{{ p }}</a>
+        {% elif p == 4 or p == total_pages - 3 %}
+        <span class="px-2 py-2 text-gray-400">...</span>
+        {% endif %}
+    {% endfor %}
+
+    {% if page < total_pages %}
+    <a href="{{ base_url }}?page={{ page + 1 }}&search={{ search }}&difficulty={{ difficulty }}"
+        class="px-4 py-2 bg-white border rounded hover:bg-gray-50">Sau →</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

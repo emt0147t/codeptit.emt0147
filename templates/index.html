@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Online Judge - Trang chủ{% endblock %}
+
+{% block content %}
+<div class="text-center py-12">
+    <h1 class="text-5xl font-bold text-gray-800 mb-4">⚡ Online Judge</h1>
+    <p class="text-xl text-gray-600 mb-8">Luyện tập lập trình, nâng cao kỹ năng giải thuật</p>
+
+    <div class="flex justify-center space-x-4 mb-12">
+        <a href="/problems" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-medium transition">
+            Bắt đầu luyện tập →
+        </a>
+        <a href="/register" class="bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-600 px-8 py-3 rounded-lg text-lg font-medium transition">
+            Đăng ký tài khoản
+        </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto mb-12">
+        <div class="bg-white p-6 rounded-lg shadow-sm border">
+            <div class="text-3xl font-bold text-blue-600">{{ total_problems }}</div>
+            <div class="text-gray-500 mt-1">Bài tập</div>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-sm border">
+            <div class="text-3xl font-bold text-green-600">{{ total_submissions }}</div>
+            <div class="text-gray-500 mt-1">Lần nộp bài</div>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-sm border">
+            <div class="text-3xl font-bold text-purple-600">{{ total_users }}</div>
+            <div class="text-gray-500 mt-1">Thành viên</div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Cards -->
+<div class="mb-8">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">📚 Danh mục môn học</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for cat in categories %}
+        <a href="/category/{{ cat.slug }}" class="block bg-white rounded-xl shadow-sm border hover:shadow-md hover:border-{{ cat.color }}-300 transition-all duration-200 overflow-hidden group">
+            <div class="p-6">
+                <div class="flex items-center mb-3">
+                    <span class="text-3xl mr-3">{{ cat.icon }}</span>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 group-hover:text-{{ cat.color }}-600 transition">{{ cat.name }}</h3>
+                        <span class="text-sm text-gray-400 font-mono">{{ cat.short }}</span>
+                    </div>
+                </div>
+                <p class="text-gray-500 text-sm mb-4">{{ cat.description }}</p>
+                <div class="flex items-center justify-between">
+                    <span class="text-{{ cat.color }}-600 font-bold text-2xl">{{ cat.count }}</span>
+                    <span class="text-gray-400 text-sm">bài tập</span>
+                </div>
+                <div class="mt-3 w-full bg-gray-100 rounded-full h-1.5">
+                    <div class="bg-{{ cat.color }}-500 h-1.5 rounded-full" style="width: {{ (cat.count / total_problems * 100) | round(1) }}%"></div>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

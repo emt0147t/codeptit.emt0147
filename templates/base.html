@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Online Judge{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        .status-accepted { color: #22c55e; font-weight: 600; }
+        .status-wrong { color: #ef4444; font-weight: 600; }
+        .status-tle { color: #f59e0b; font-weight: 600; }
+        .status-pending { color: #6b7280; font-weight: 600; }
+        .status-ce { color: #a855f7; font-weight: 600; }
+        .status-re { color: #ec4899; font-weight: 600; }
+        .status-mle { color: #f97316; font-weight: 600; }
+        .diff-easy { color: #22c55e; }
+        .diff-medium { color: #f59e0b; }
+        .diff-hard { color: #ef4444; }
+        .code-editor {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            tab-size: 4;
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body class="h-full bg-gray-50">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center space-x-8">
+                    <a href="/" class="text-xl font-bold text-blue-600">⚡ Online Judge</a>
+                    <a href="/problems" class="text-gray-700 hover:text-blue-600 font-medium">Bài tập</a>
+
+                    <!-- Category Dropdown -->
+                    <div class="relative" id="cat-dropdown">
+                        <button onclick="document.getElementById('cat-menu').classList.toggle('hidden')"
+                            class="text-gray-700 hover:text-blue-600 font-medium flex items-center gap-1">
+                            Môn học
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        <div id="cat-menu" class="hidden absolute left-0 mt-2 w-72 bg-white rounded-lg shadow-lg border z-50">
+                            <div class="py-2">
+                                <a href="/category/ngon-ngu-lap-trinh-cpp" class="flex items-center px-4 py-2.5 hover:bg-blue-50 transition">
+                                    <span class="text-xl mr-3">💻</span>
+                                    <span class="text-gray-700 font-medium">Ngôn ngữ lập trình C++</span>
+                                </a>
+                                <a href="/category/tin-hoc-co-so-2" class="flex items-center px-4 py-2.5 hover:bg-green-50 transition">
+                                    <span class="text-xl mr-3">📘</span>
+                                    <span class="text-gray-700 font-medium">Tin học cơ sở 2</span>
+                                </a>
+                                <a href="/category/cau-truc-du-lieu-giai-thuat" class="flex items-center px-4 py-2.5 hover:bg-purple-50 transition">
+                                    <span class="text-xl mr-3">🧩</span>
+                                    <span class="text-gray-700 font-medium">DSA - Giải thuật</span>
+                                </a>
+                                <a href="/category/lap-trinh-huong-doi-tuong" class="flex items-center px-4 py-2.5 hover:bg-orange-50 transition">
+                                    <span class="text-xl mr-3">☕</span>
+                                    <span class="text-gray-700 font-medium">Lập trình hướng đối tượng</span>
+                                </a>
+                                <a href="/category/lap-trinh-voi-python" class="flex items-center px-4 py-2.5 hover:bg-yellow-50 transition">
+                                    <span class="text-xl mr-3">🐍</span>
+                                    <span class="text-gray-700 font-medium">Lập trình với Python</span>
+                                </a>
+                                <a href="/category/thuat-toan-nang-cao" class="flex items-center px-4 py-2.5 hover:bg-red-50 transition">
+                                    <span class="text-xl mr-3">🏆</span>
+                                    <span class="text-gray-700 font-medium">Thuật toán nâng cao</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="/submissions" class="text-gray-700 hover:text-blue-600 font-medium">Bài nộp</a>
+                    <a href="/ranking" class="text-gray-700 hover:text-blue-600 font-medium">Xếp hạng</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    {% if user %}
+                        <span class="text-gray-600">Xin chào, <strong>{{ user.username }}</strong></span>
+                        {% if user.is_admin %}
+                            <a href="/admin/problems/add" class="text-purple-600 hover:text-purple-800 font-medium">+ Thêm bài</a>
+                        {% endif %}
+                        <a href="/my-submissions" class="text-gray-600 hover:text-blue-600">Bài nộp của tôi</a>
+                        <a href="/logout" class="bg-gray-200 hover:bg-gray-300 px-3 py-1.5 rounded text-sm">Đăng xuất</a>
+                    {% else %}
+                        <a href="/login" class="text-blue-600 hover:text-blue-800 font-medium">Đăng nhập</a>
+                        <a href="/register" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm">Đăng ký</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t mt-auto py-4">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
+            Online Judge System — Built with FastAPI & ❤️
+        </div>
+    </footer>
+
+    <script>hljs.highlightAll();</script>
+    <script>
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            var dd = document.getElementById('cat-dropdown');
+            var menu = document.getElementById('cat-menu');
+            if (dd && menu && !dd.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
