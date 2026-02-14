@@ -4,6 +4,7 @@ Submission routes: submit code, view results.
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from config import BASE_DIR
 from sqlalchemy.orm import Session
 import threading
 
@@ -14,7 +15,7 @@ from judge.executor import Judge
 from config import SUBMISSIONS_PER_PAGE, SUPPORTED_LANGUAGES
 
 router = APIRouter(tags=["submissions"])
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 def run_judge_async(submission_id: int):

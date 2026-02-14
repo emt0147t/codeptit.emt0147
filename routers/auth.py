@@ -4,6 +4,7 @@ Authentication routes: login, register, logout.
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from config import BASE_DIR
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -11,7 +12,7 @@ from models import User
 import bcrypt as _bcrypt
 
 router = APIRouter(tags=["auth"])
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 def hash_password(password: str) -> str:

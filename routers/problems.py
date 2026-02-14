@@ -4,6 +4,7 @@ Problem routes: list, detail, create (admin).
 from fastapi import APIRouter, Request, Depends, Form, HTTPException, UploadFile, File
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from config import BASE_DIR
 from sqlalchemy.orm import Session
 from typing import Optional
 import json
@@ -15,7 +16,7 @@ from routers.auth import get_current_user, require_admin
 from config import PROBLEMS_PER_PAGE, CATEGORIES
 
 router = APIRouter(tags=["problems"])
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 @router.get("/problems")
