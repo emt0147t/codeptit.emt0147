@@ -33,3 +33,7 @@ Code_PTIT-main/
 
 # Testcase files (already in DB)
 testcases/
+
+# Environment Variables & Database
+.env
+online_judge.db

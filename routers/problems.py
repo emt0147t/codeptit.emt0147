@@ -439,3 +439,47 @@ async def update_problem_limits(
         url=f"/admin/problem/{problem_code}/testcases?msg=Limits+updated",
         status_code=302
     )
+
+@router.post("/admin/problem/{problem_code}/testcases/generate")
+async def auto_generate_testcases(
+    request: Request,
+    problem_code: str,
+    generator_code: str = Form(...),
+    solution_code: str = Form(...),
+    solution_lang: str = Form("python"),
+    num_tests: int = Form(10),
+    db: Session = Depends(get_db)
+):
+    """Auto generate test cases using provided scripts via testcase_runner."""
+    user = require_admin(request, db)
+    problem = db.query(Problem).filter(Problem.code == problem_code).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+        
+    import sys
+    import os
+    tools_path = os.path.join(BASE_DIR, "tools")
+    if tools_path not in sys.path:
+        sys.path.insert(0, tools_path)
+        
+    try:
+        from testcase_runner import run_local_generator
+        count = run_local_generator(
+            problem_code=problem_code,
+            generator_code=generator_code,
+            solution_code=solution_code,
+            num_tests=min(50, max(1, num_tests)),
+            language=solution_lang
+        )
+        if count is False:
+            msg = "Lỗi khi biên dịch/chạy code. Vui lòng xem console log."
+        else:
+            msg = f"Đã sinh thành công {count} test cases."
+    except Exception as e:
+        msg = f"Lỗi: {str(e)}"
+
+    from urllib.parse import quote
+    return RedirectResponse(
+        url=f"/admin/problem/{problem_code}/testcases?msg={quote(msg)}",
+        status_code=302
+    )

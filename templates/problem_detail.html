@@ -19,10 +19,12 @@
         height: 400px;
         font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
     }
+
     .CodeMirror-focused {
         border-color: #3b82f6;
-        box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
     }
+
     .CodeMirror-scroll {
         min-height: 200px;
     }
@@ -51,17 +53,20 @@
 
             <h1 class="text-2xl font-bold text-gray-800 mb-4">{{ problem.title }}</h1>
 
-            <div class="prose max-w-none">
-                <div class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ problem.description }}</div>
+            <div class="prose max-w-none markdown-body" id="problem-content">
+                <div class="raw-content hidden">{{ problem.description }}</div>
+                <div class="rendered-content"></div>
 
                 {% if problem.input_description %}
                 <h3 class="text-lg font-semibold mt-6 mb-2">Dữ liệu vào</h3>
-                <div class="text-gray-700 whitespace-pre-wrap">{{ problem.input_description }}</div>
+                <div class="raw-content hidden">{{ problem.input_description }}</div>
+                <div class="rendered-content"></div>
                 {% endif %}
 
                 {% if problem.output_description %}
                 <h3 class="text-lg font-semibold mt-6 mb-2">Kết quả</h3>
-                <div class="text-gray-700 whitespace-pre-wrap">{{ problem.output_description }}</div>
+                <div class="raw-content hidden">{{ problem.output_description }}</div>
+                <div class="rendered-content"></div>
                 {% endif %}
             </div>
 
@@ -70,34 +75,58 @@
             <h3 class="text-lg font-semibold mt-6 mb-3">Ví dụ</h3>
             {% for tc in sample_testcases %}
             <div class="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                    <div class="text-sm font-medium text-gray-500 mb-1">Input</div>
-                    <pre class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ tc.input_data }}</pre>
+                <div class="relative group">
+                    <div class="flex justify-between items-center mb-1">
+                        <div class="text-sm font-medium text-gray-500">Input</div>
+                        <button onclick="copyToClipboard(this, 'tc-in-{{ loop.index }}')"
+                            class="text-xs text-gray-400 hover:text-blue-500 hidden group-hover:block transition">📋
+                            Copy</button>
+                    </div>
+                    <pre id="tc-in-{{ loop.index }}"
+                        class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ tc.input_data }}</pre>
                 </div>
-                <div>
-                    <div class="text-sm font-medium text-gray-500 mb-1">Output</div>
-                    <pre class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ tc.expected_output }}</pre>
+                <div class="relative group">
+                    <div class="flex justify-between items-center mb-1">
+                        <div class="text-sm font-medium text-gray-500">Output</div>
+                        <button onclick="copyToClipboard(this, 'tc-out-{{ loop.index }}')"
+                            class="text-xs text-gray-400 hover:text-blue-500 hidden group-hover:block transition">📋
+                            Copy</button>
+                    </div>
+                    <pre id="tc-out-{{ loop.index }}"
+                        class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ tc.expected_output }}</pre>
                 </div>
             </div>
             {% endfor %}
             {% elif problem.sample_input or problem.sample_output %}
             <h3 class="text-lg font-semibold mt-6 mb-3">Ví dụ</h3>
             <div class="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                    <div class="text-sm font-medium text-gray-500 mb-1">Input</div>
-                    <pre class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ problem.sample_input }}</pre>
+                <div class="relative group">
+                    <div class="flex justify-between items-center mb-1">
+                        <div class="text-sm font-medium text-gray-500">Input</div>
+                        <button onclick="copyToClipboard(this, 'tc-in-0')"
+                            class="text-xs text-gray-400 hover:text-blue-500 hidden group-hover:block transition">📋
+                            Copy</button>
+                    </div>
+                    <pre id="tc-in-0"
+                        class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ problem.sample_input }}</pre>
                 </div>
-                <div>
-                    <div class="text-sm font-medium text-gray-500 mb-1">Output</div>
-                    <pre class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ problem.sample_output }}</pre>
+                <div class="relative group">
+                    <div class="flex justify-between items-center mb-1">
+                        <div class="text-sm font-medium text-gray-500">Output</div>
+                        <button onclick="copyToClipboard(this, 'tc-out-0')"
+                            class="text-xs text-gray-400 hover:text-blue-500 hidden group-hover:block transition">📋
+                            Copy</button>
+                    </div>
+                    <pre id="tc-out-0"
+                        class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ problem.sample_output }}</pre>
                 </div>
             </div>
             {% endif %}
 
             {% if user and user.is_admin %}
             <div class="mt-4 pt-4 border-t">
-                <a href="/admin/problem/{{ problem.code }}/testcases"
-                    class="text-purple-600 hover:underline text-sm">⚙️ Quản lý test cases</a>
+                <a href="/admin/problem/{{ problem.code }}/testcases" class="text-purple-600 hover:underline text-sm">⚙️
+                    Quản lý test cases</a>
             </div>
             {% endif %}
         </div>
@@ -113,9 +142,22 @@
                 <input type="hidden" name="problem_id" value="{{ problem.id }}">
 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Ngôn ngữ</label>
+                    <div class="flex justify-between mb-1">
+                        <label class="block text-sm font-medium text-gray-700">Ngôn ngữ</label>
+                        <div class="flex gap-2">
+                            <select id="theme-select" class="text-xs border rounded px-1 outline-none">
+                                <option value="dracula">Dracula</option>
+                                <option value="default">Light</option>
+                            </select>
+                            <select id="font-select" class="text-xs border rounded px-1 outline-none">
+                                <option value="13px">13px</option>
+                                <option value="15px">15px</option>
+                                <option value="17px">17px</option>
+                            </select>
+                        </div>
+                    </div>
                     <select name="language" id="language-select"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none mb-2">
                         <option value="python">Python 3</option>
                         <option value="cpp">C++ 17</option>
                         <option value="c">C</option>
@@ -124,8 +166,7 @@
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Mã nguồn</label>
-                    <textarea name="source_code" id="source-code" rows="15" required
-                        class="hidden"></textarea>
+                    <textarea name="source_code" id="source-code" rows="15" required class="hidden"></textarea>
                     <div id="code-editor-wrapper"></div>
                 </div>
 
@@ -136,73 +177,155 @@
             </form>
 
             <script>
-            (function() {
-                const langModes = {
-                    'python': 'python',
-                    'cpp': 'text/x-c++src',
-                    'c': 'text/x-csrc'
-                };
-                const langTemplates = {
-                    'python': '# Code Python tại đây\n\n',
-                    'cpp': '#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}\n',
-                    'c': '#include <stdio.h>\n\nint main() {\n    \n    return 0;\n}\n'
-                };
+                // Utility: Copy to clipboard
+                function copyToClipboard(btn, targetId) {
+                    const text = document.getElementById(targetId).textContent;
+                    navigator.clipboard.writeText(text).then(() => {
+                        const originalText = btn.textContent;
+                        btn.textContent = '✅ Đã copy!';
+                        setTimeout(() => { btn.textContent = originalText; }, 2000);
+                    });
+                }
 
-                const textarea = document.getElementById('source-code');
-                const wrapper = document.getElementById('code-editor-wrapper');
-                const select = document.getElementById('language-select');
+                // Render Markdown + KaTeX
+                document.addEventListener("DOMContentLoaded", function () {
+                    if (typeof marked !== 'undefined') {
+                        // Cấu hình marked để render break lines tốt hơn
+                        marked.use({
+                            breaks: true,
+                            gfm: true
+                        });
 
-                const editor = CodeMirror(wrapper, {
-                    value: langTemplates[select.value] || '',
-                    mode: langModes[select.value] || 'python',
-                    theme: 'dracula',
-                    lineNumbers: true,
-                    matchBrackets: true,
-                    autoCloseBrackets: true,
-                    styleActiveLine: true,
-                    indentUnit: 4,
-                    tabSize: 4,
-                    indentWithTabs: false,
-                    lineWrapping: false,
-                    extraKeys: {
-                        'Tab': function(cm) {
-                            if (cm.somethingSelected()) {
-                                cm.indentSelection('add');
-                            } else {
-                                cm.replaceSelection('    ', 'end');
+                        const textAreas = document.querySelectorAll('.raw-content');
+                        textAreas.forEach((el) => {
+                            const rawText = el.textContent;
+                            // Dùng marked parsing
+                            const mdHtml = marked.parse(rawText);
+                            // Clean HTML
+                            const cleanHtml = DOMPurify.sanitize(mdHtml);
+
+                            const renderTarget = el.nextElementSibling;
+                            renderTarget.innerHTML = cleanHtml;
+
+                            // Render Math trên target đã render HTML
+                            renderMathInElement(renderTarget, {
+                                delimiters: [
+                                    { left: '$$', right: '$$', display: true },
+                                    { left: '$', right: '$', display: false },
+                                    { left: '\\(', right: '\\)', display: false },
+                                    { left: '\\[', right: '\\]', display: true }
+                                ],
+                                throwOnError: false
+                            });
+                        });
+                    }
+                });
+
+                // Code Editor Logic
+                (function () {
+                    const langModes = {
+                        'python': 'python',
+                        'cpp': 'text/x-c++src',
+                        'c': 'text/x-csrc'
+                    };
+                    const langTemplates = {
+                        'python': '# Code Python tại đây\n\n',
+                        'cpp': '#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}\n',
+                        'c': '#include <stdio.h>\n\nint main() {\n    \n    return 0;\n}\n'
+                    };
+
+                    const extPrefix = 'oj_code_{{ problem.id }}_';
+
+                    const textarea = document.getElementById('source-code');
+                    const wrapper = document.getElementById('code-editor-wrapper');
+                    const select = document.getElementById('language-select');
+                    const themeSelect = document.getElementById('theme-select');
+                    const fontSelect = document.getElementById('font-select');
+
+                    // Khôi phục setting từ local storage
+                    const savedLang = localStorage.getItem('oj_lang') || 'python';
+                    const savedTheme = localStorage.getItem('oj_theme') || 'dracula';
+                    const savedFont = localStorage.getItem('oj_font') || '13px';
+
+                    select.value = savedLang;
+                    themeSelect.value = savedTheme;
+                    fontSelect.value = savedFont;
+
+                    // Set font size initial
+                    wrapper.style.fontSize = savedFont;
+
+                    let initialCode = localStorage.getItem(extPrefix + select.value) || langTemplates[select.value] || '';
+
+                    const editor = CodeMirror(wrapper, {
+                        value: initialCode,
+                        mode: langModes[select.value] || 'python',
+                        theme: savedTheme,
+                        lineNumbers: true,
+                        matchBrackets: true,
+                        autoCloseBrackets: true,
+                        styleActiveLine: true,
+                        indentUnit: 4,
+                        tabSize: 4,
+                        indentWithTabs: false,
+                        lineWrapping: false,
+                        extraKeys: {
+                            'Tab': function (cm) {
+                                if (cm.somethingSelected()) {
+                                    cm.indentSelection('add');
+                                } else {
+                                    cm.replaceSelection('    ', 'end');
+                                }
+                            },
+                            'Shift-Tab': function (cm) {
+                                cm.indentSelection('subtract');
                             }
-                        },
-                        'Shift-Tab': function(cm) {
-                            cm.indentSelection('subtract');
                         }
-                    }
-                });
+                    });
 
-                // Sync editor content to hidden textarea on change
-                editor.on('change', function() {
+                    // Tự động lưu nội dung source code
+                    editor.on('change', function () {
+                        const val = editor.getValue();
+                        textarea.value = val;
+                        localStorage.setItem(extPrefix + select.value, val);
+                    });
+
+                    // Đổi ngôn ngữ
+                    select.addEventListener('change', function () {
+                        const lang = this.value;
+                        localStorage.setItem('oj_lang', lang);
+                        editor.setOption('mode', langModes[lang] || 'python');
+
+                        const savedContent = localStorage.getItem(extPrefix + lang);
+                        if (savedContent) {
+                            editor.setValue(savedContent);
+                        } else {
+                            editor.setValue(langTemplates[lang] || '');
+                        }
+                    });
+
+                    // Thay đổi Theme
+                    themeSelect.addEventListener('change', function () {
+                        editor.setOption('theme', this.value);
+                        localStorage.setItem('oj_theme', this.value);
+                    });
+
+                    // Thay đổi Font
+                    fontSelect.addEventListener('change', function () {
+                        wrapper.querySelector('.CodeMirror').style.fontSize = this.value;
+                        editor.refresh();
+                        localStorage.setItem('oj_font', this.value);
+                    });
+
+                    // Sync trước submit (phòng hờ)
+                    editor.getWrapperElement().closest('form').addEventListener('submit', function () {
+                        textarea.value = editor.getValue();
+                    });
+
                     textarea.value = editor.getValue();
-                });
 
-                // Switch language mode when dropdown changes
-                select.addEventListener('change', function() {
-                    const lang = this.value;
-                    editor.setOption('mode', langModes[lang] || 'python');
-                    // Only set template if editor is empty or has default template
-                    const current = editor.getValue().trim();
-                    const isTemplate = Object.values(langTemplates).some(t => t.trim() === current);
-                    if (!current || isTemplate) {
-                        editor.setValue(langTemplates[lang] || '');
-                    }
-                });
-
-                // Ensure textarea is synced before form submission
-                editor.getWrapperElement().closest('form').addEventListener('submit', function() {
-                    textarea.value = editor.getValue();
-                });
-
-                // Set initial value
-                textarea.value = editor.getValue();
-            })();
+                    // Refresh sau chút để nhận font
+                    setTimeout(() => editor.refresh(), 100);
+                })();
             </script>
             {% else %}
             <p class="text-gray-500 text-sm">
