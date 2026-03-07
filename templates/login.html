@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Đăng nhập - Online Judge{% endblock %}
+{% block title %}Đăng nhập -<span class='text-[#c82333] font-bold'>Code</span><span class='text-gray-800 font-bold'>PTIT</span><span class='text-gray-500 font-medium italic'>clone</span>{% endblock %}
 
 {% block content %}
 <div class="max-w-md mx-auto mt-10">
@@ -16,23 +16,23 @@
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-medium mb-2">Tên đăng nhập</label>
                 <input type="text" name="username" required
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#c82333] focus:border-transparent outline-none"
                     placeholder="Nhập tên đăng nhập">
             </div>
             <div class="mb-6">
                 <label class="block text-gray-700 text-sm font-medium mb-2">Mật khẩu</label>
                 <input type="password" name="password" required
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#c82333] focus:border-transparent outline-none"
                     placeholder="Nhập mật khẩu">
             </div>
             <button type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition">
+                class="w-full bg-[#c82333] hover:bg-[#a71d2a] text-white font-medium py-2.5 rounded-lg transition">
                 Đăng nhập
             </button>
         </form>
 
         <p class="mt-4 text-center text-gray-600 text-sm">
-            Chưa có tài khoản? <a href="/register" class="text-blue-600 hover:underline">Đăng ký ngay</a>
+            Chưa có tài khoản? <a href="/register" class="text-[#c82333] hover:underline">Đăng ký ngay</a>
         </p>
     </div>
 </div>

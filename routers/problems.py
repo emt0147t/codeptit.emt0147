@@ -483,3 +483,38 @@ async def auto_generate_testcases(
         url=f"/admin/problem/{problem_code}/testcases?msg={quote(msg)}",
         status_code=302
     )
+
+@router.post("/admin/problem/{problem_code}/testcases/ai-generate")
+async def ai_generate_testcases(
+    request: Request,
+    problem_code: str,
+    num_tests: int = Form(10),
+    db: Session = Depends(get_db)
+):
+    """Generate testcases with Gemini AI completely autonomously."""
+    user = require_admin(request, db)
+    problem = db.query(Problem).filter(Problem.code == problem_code).first()
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+
+    import sys
+    import os
+    tools_path = os.path.join(BASE_DIR, "tools")
+    if tools_path not in sys.path:
+        sys.path.insert(0, tools_path)
+
+    try:
+        from auto_testcase_gen import auto_generate_testcases as ai_gen
+        count, error_msg = ai_gen(problem_code, min(50, max(1, num_tests)))
+        if count == 0:
+            msg = error_msg or "Lỗi không xác định khi sinh test bằng AI."
+        else:
+            msg = f"Ngạo nghễ 🤖 AI đã tự động phân tích đề và sinh thành công {count} test cases cho bài {problem_code}!"
+    except Exception as e:
+        msg = f"Lỗi hệ thống: {str(e)}"
+
+    from urllib.parse import quote
+    return RedirectResponse(
+        url=f"/admin/problem/{problem_code}/testcases?msg={quote(msg)}",
+        status_code=302
+    )

@@ -66,7 +66,7 @@ import sys
 Do not include any extra text. Make sure the codes are clean and handle large edge cases based on problem limits.
 """
 
-    model = genai.GenerativeModel("gemini-1.5-pro")
+    model = genai.GenerativeModel("gemini-2.5-flash")
     
     try:
         response = model.generate_content(prompt)
@@ -90,19 +90,15 @@ def auto_generate_testcases(problem_code: str, num_tests: int = 10):
     problem = db.query(Problem).filter(Problem.code == problem_code).first()
     
     if not problem:
-        print(f"Lỗi: Không tìm thấy bài tập {problem_code}")
         db.close()
-        return
+        return 0, f"Lỗi: Không tìm thấy bài tập {problem_code}"
 
-    print(f"--- Đang sinh script bằng AI cho bài {problem_code} ---")
     gen_code, sol_code = generate_scripts_for_problem(problem)
     
     if not gen_code or not sol_code:
-        print("Sinh script thất bại. Hủy bỏ.")
         db.close()
-        return
+        return 0, "Sinh script bằng AI thất bại. Vui lòng thử lại sau."
         
-    print("--- Đã nhận được code từ AI. Đang chuẩn bị chạy testcase runner ---")
     count = run_local_generator(
         problem_code=problem_code,
         generator_code=gen_code,
@@ -111,12 +107,12 @@ def auto_generate_testcases(problem_code: str, num_tests: int = 10):
         language="python"
     )
     
-    if count is not False:
-        print(f"✅ Hoàn tất. Đã sinh thành công {count} test cases AI cho bài {problem_code}")
-    else:
-        print("❌ Lỗi trong quá trình chạy testcase_runner.")
-        
     db.close()
+    
+    if count is not False:
+        return count, ""
+    else:
+        return 0, "Lỗi trong quá trình chạy testcase_runner."
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI Testcase Generator")

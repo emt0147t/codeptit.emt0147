@@ -38,7 +38,7 @@
         <div class="bg-white rounded-lg shadow-sm border p-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <span class="text-sm font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded">{{ problem.code }}</span>
+                    <span class="text-sm font-mono text-[#c82333] bg-red-50 px-2 py-1 rounded">{{ problem.code }}</span>
                     <span class="ml-2 text-sm diff-{{ problem.difficulty|lower }} px-2 py-1 rounded
                         {% if problem.difficulty == 'Easy' %}bg-green-50
                         {% elif problem.difficulty == 'Medium' %}bg-yellow-50
@@ -79,7 +79,7 @@
                     <div class="flex justify-between items-center mb-1">
                         <div class="text-sm font-medium text-gray-500">Input</div>
                         <button onclick="copyToClipboard(this, 'tc-in-{{ loop.index }}')"
-                            class="text-xs text-gray-400 hover:text-blue-500 hidden group-hover:block transition">📋
+                            class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
                             Copy</button>
                     </div>
                     <pre id="tc-in-{{ loop.index }}"
@@ -89,7 +89,7 @@
                     <div class="flex justify-between items-center mb-1">
                         <div class="text-sm font-medium text-gray-500">Output</div>
                         <button onclick="copyToClipboard(this, 'tc-out-{{ loop.index }}')"
-                            class="text-xs text-gray-400 hover:text-blue-500 hidden group-hover:block transition">📋
+                            class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
                             Copy</button>
                     </div>
                     <pre id="tc-out-{{ loop.index }}"
@@ -104,7 +104,7 @@
                     <div class="flex justify-between items-center mb-1">
                         <div class="text-sm font-medium text-gray-500">Input</div>
                         <button onclick="copyToClipboard(this, 'tc-in-0')"
-                            class="text-xs text-gray-400 hover:text-blue-500 hidden group-hover:block transition">📋
+                            class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
                             Copy</button>
                     </div>
                     <pre id="tc-in-0"
@@ -114,7 +114,7 @@
                     <div class="flex justify-between items-center mb-1">
                         <div class="text-sm font-medium text-gray-500">Output</div>
                         <button onclick="copyToClipboard(this, 'tc-out-0')"
-                            class="text-xs text-gray-400 hover:text-blue-500 hidden group-hover:block transition">📋
+                            class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
                             Copy</button>
                     </div>
                     <pre id="tc-out-0"
@@ -125,7 +125,7 @@
 
             {% if user and user.is_admin %}
             <div class="mt-4 pt-4 border-t">
-                <a href="/admin/problem/{{ problem.code }}/testcases" class="text-purple-600 hover:underline text-sm">⚙️
+                <a href="/admin/problem/{{ problem.code }}/testcases" class="text-[#c82333] hover:underline text-sm">⚙️
                     Quản lý test cases</a>
             </div>
             {% endif %}
@@ -157,7 +157,7 @@
                         </div>
                     </div>
                     <select name="language" id="language-select"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none mb-2">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#c82333] outline-none mb-2">
                         <option value="python">Python 3</option>
                         <option value="cpp">C++ 17</option>
                         <option value="c">C</option>
@@ -329,7 +329,7 @@
             </script>
             {% else %}
             <p class="text-gray-500 text-sm">
-                Vui lòng <a href="/login" class="text-blue-600 hover:underline">đăng nhập</a> để nộp bài.
+                Vui lòng <a href="/login" class="text-[#c82333] hover:underline">đăng nhập</a> để nộp bài.
             </p>
             {% endif %}
         </div>

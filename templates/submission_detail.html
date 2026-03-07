@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Kết quả #{{ submission.id }} - Online Judge{% endblock %}
+{% block title %}Kết quả #{{ submission.id }} -<span class='text-[#c82333] font-bold'>Code</span><span class='text-gray-800 font-bold'>PTIT</span><span class='text-gray-500 font-medium italic'>clone</span>{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto">
@@ -8,7 +8,7 @@
             <h1 class="text-xl font-bold text-gray-800">
                 Kết quả nộp bài #{{ submission.id }}
             </h1>
-            <a href="/problem/{{ problem.code }}" class="text-blue-600 hover:underline">
+            <a href="/problem/{{ problem.code }}" class="text-[#c82333] hover:underline">
                 ← {{ problem.code }} - {{ problem.title }}
             </a>
         </div>

@@ -1,5 +1,5 @@
 """
-Online Judge - Main Application
+CodePTITclone - Main Application
 FastAPI-based online judge system for competitive programming practice.
 """
 from fastapi import FastAPI, Request, Depends
@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize app
-app = FastAPI(title="Online Judge", version="1.0.0")
+app = FastAPI(title="CodePTITclone", version="1.0.0")
 
 # Middleware
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
@@ -36,7 +36,7 @@ app.include_router(submissions.router)
 @app.on_event("startup")
 def startup():
     """Initialize database on startup."""
-    logger.info(f"Starting Online Judge, BASE_DIR={BASE_DIR}")
+    logger.info(f"Starting CodePTITclone, BASE_DIR={BASE_DIR}")
     logger.info(f"DB exists: {(BASE_DIR / 'online_judge.db').exists()}")
     init_db()
     logger.info("Database initialized successfully")

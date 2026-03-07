@@ -1,16 +1,16 @@
 {% extends "base.html" %}
-{% block title %}Online Judge - Trang chủ{% endblock %}
+{% block title %}CodePTITclone - Trang chủ{% endblock %}
 
 {% block content %}
 <div class="text-center py-12">
-    <h1 class="text-5xl font-bold text-gray-800 mb-4">⚡ Online Judge</h1>
+    <h1 class="text-5xl font-bold text-gray-800 mb-4"><span class='text-[#c82333] font-bold'>Code</span><span class='text-gray-800 font-bold'>PTIT</span><span class='text-gray-500 font-medium italic'>clone</span></h1>
     <p class="text-xl text-gray-600 mb-8">Luyện tập lập trình, nâng cao kỹ năng giải thuật</p>
 
     <div class="flex justify-center space-x-4 mb-12">
-        <a href="/problems" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg text-lg font-medium transition">
+        <a href="/problems" class="bg-[#c82333] hover:bg-[#a71d2a] text-white px-8 py-3 rounded-lg text-lg font-medium transition">
             Bắt đầu luyện tập →
         </a>
-        <a href="/register" class="bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-600 px-8 py-3 rounded-lg text-lg font-medium transition">
+        <a href="/register" class="bg-white hover:bg-gray-50 text-[#c82333] border-2 border-[#c82333] px-8 py-3 rounded-lg text-lg font-medium transition">
             Đăng ký tài khoản
         </a>
     </div>
@@ -18,15 +18,15 @@
     <!-- Stats -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto mb-12">
         <div class="bg-white p-6 rounded-lg shadow-sm border">
-            <div class="text-3xl font-bold text-blue-600">{{ total_problems }}</div>
+            <div class="text-3xl font-bold text-[#c82333]">{{ total_problems }}</div>
             <div class="text-gray-500 mt-1">Bài tập</div>
         </div>
         <div class="bg-white p-6 rounded-lg shadow-sm border">
-            <div class="text-3xl font-bold text-green-600">{{ total_submissions }}</div>
+            <div class="text-3xl font-bold text-[#c82333]">{{ total_submissions }}</div>
             <div class="text-gray-500 mt-1">Lần nộp bài</div>
         </div>
         <div class="bg-white p-6 rounded-lg shadow-sm border">
-            <div class="text-3xl font-bold text-purple-600">{{ total_users }}</div>
+            <div class="text-3xl font-bold text-[#c82333]">{{ total_users }}</div>
             <div class="text-gray-500 mt-1">Thành viên</div>
         </div>
     </div>
