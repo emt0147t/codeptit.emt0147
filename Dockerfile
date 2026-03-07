@@ -14,8 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application
 COPY . .
 
-# Expose port
+# Expose port (Render overrides this with PORT env var)
 EXPOSE 10000
 
-# Run
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "10000"]
+# Run using shell so environment variables are evaluated
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-10000}"]

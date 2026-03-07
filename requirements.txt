@@ -5,3 +5,6 @@ bcrypt
 python-multipart
 jinja2
 aiofiles
+itsdangerous
+google-generativeai
+python-dotenv

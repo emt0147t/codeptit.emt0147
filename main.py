@@ -37,8 +37,19 @@ app.include_router(submissions.router)
 def startup():
     """Initialize database on startup."""
     logger.info(f"Starting CodePTITclone, BASE_DIR={BASE_DIR}")
-    logger.info(f"DB exists: {(BASE_DIR / 'online_judge.db').exists()}")
+    db_exists = (BASE_DIR / 'online_judge.db').exists()
+    logger.info(f"DB exists: {db_exists}")
     init_db()
+    
+    if not db_exists:
+        try:
+            logger.info("First run detected. Creating admin and sample problems...")
+            import init_db as init_script
+            init_script.create_admin()
+            init_script.add_sample_problems()
+        except Exception as e:
+            logger.error(f"Failed to initialize default data: {e}")
+            
     logger.info("Database initialized successfully")
 
 
