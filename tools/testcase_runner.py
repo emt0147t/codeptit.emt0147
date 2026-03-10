@@ -51,11 +51,13 @@ def run_local_generator(problem_code: str, generator_code: str, solution_code: s
                 capture_output=True, text=True
             )
             if compile_res.returncode != 0:
-                print(f"Lỗi biên dịch solution:\n{compile_res.stderr}")
+                err = f"Lỗi biên dịch solution:\n{compile_res.stderr}"
+                print(err)
                 db.close()
-                return False
+                return False, err
 
         generated_count = 0
+        accum_error = ""
         for i in range(num_tests):
             try:
                 # 1. Run generator to get input
@@ -65,11 +67,13 @@ def run_local_generator(problem_code: str, generator_code: str, solution_code: s
                     capture_output=True, text=True, timeout=5
                 )
                 if gen_proc.returncode != 0:
+                    accum_error += f"- Lỗi chạy generator ở test {i+1}:\n{gen_proc.stderr}\n"
                     print(f"Lỗi chạy generator ở test {i+1}:\n{gen_proc.stderr}")
                     continue
                     
                 tc_input = gen_proc.stdout.strip()
                 if not tc_input:
+                    accum_error += f"- Generator test {i+1} trả về rỗng.\n"
                     continue
                     
                 # 2. Run solution to get output
@@ -85,6 +89,7 @@ def run_local_generator(problem_code: str, generator_code: str, solution_code: s
                 )
                 
                 if sol_proc.returncode != 0:
+                    accum_error += f"- Lỗi chạy solution ở test {i+1}:\n{sol_proc.stderr}\n"
                     print(f"Lỗi chạy solution ở test {i+1}:\n{sol_proc.stderr}")
                     continue
                     
@@ -102,16 +107,18 @@ def run_local_generator(problem_code: str, generator_code: str, solution_code: s
                 db.add(tc)
                 generated_count += 1
                 
-            except subprocess.TimeoutExpired:
+            except subprocess.TimeoutExpired as e:
+                accum_error += f"- Timeout (Vượt quá thời gian chạy) khi xử lý test {i+1}\n"
                 print(f"Timeout khi chạy test {i+1}")
                 continue
             except Exception as e:
+                accum_error += f"- Lỗi hệ thống khi xử lý test {i+1}: {str(e)}\n"
                 print(f"Lỗi khi xử lý test {i+1}: {e}")
                 continue
 
         db.commit()
     db.close()
-    return generated_count
+    return generated_count, accum_error
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Testcase Generator Runner")

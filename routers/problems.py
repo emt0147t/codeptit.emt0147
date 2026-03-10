@@ -464,7 +464,7 @@ async def auto_generate_testcases(
         
     try:
         from testcase_runner import run_local_generator
-        count = run_local_generator(
+        count, run_err = run_local_generator(
             problem_code=problem_code,
             generator_code=generator_code,
             solution_code=solution_code,
@@ -472,11 +472,16 @@ async def auto_generate_testcases(
             language=solution_lang
         )
         if count is False:
-            msg = "Lỗi khi biên dịch/chạy code. Vui lòng xem console log."
+            msg = f"Lỗi biên dịch/cấu hình ban đầu: {run_err}"
+        elif count == 0:
+            msg = f"Lỗi chạy Testcase:\n{run_err}"
         else:
-            msg = f"Đã sinh thành công {count} test cases."
+            if run_err:
+                 msg = f"Đã sinh {count} test cases. Có lỗi xảy ra trong một số test:\n{run_err}"
+            else:
+                 msg = f"Đã sinh thành công {count} test cases."
     except Exception as e:
-        msg = f"Lỗi: {str(e)}"
+        msg = f"Lỗi hệ thống: {str(e)}"
 
     from urllib.parse import quote
     return RedirectResponse(
@@ -507,11 +512,14 @@ async def ai_generate_testcases(
         from auto_testcase_gen import auto_generate_testcases as ai_gen
         count, error_msg = ai_gen(problem_code, min(50, max(1, num_tests)))
         if count == 0:
-            msg = error_msg or "Lỗi không xác định khi sinh test bằng AI."
+            msg = f"Thất bại:\n{error_msg}"
         else:
-            msg = f"Ngạo nghễ 🤖 AI đã tự động phân tích đề và sinh thành công {count} test cases cho bài {problem_code}!"
+            if error_msg:
+                msg = f"Sinh được {count} test.\nCó cảnh báo:\n{error_msg}"
+            else:
+                msg = f"Thành công 🤖 AI sinh {count} test cases!"
     except Exception as e:
-        msg = f"Lỗi hệ thống: {str(e)}"
+        msg = f"Lỗi hệ thống không lường trước: {str(e)}"
 
     from urllib.parse import quote
     return RedirectResponse(

@@ -27,6 +27,8 @@ if API_KEY:
 else:
     print("Warning: GEMINI_API_KEY not found in environment variables. Auto-generation will fail.")
 
+import re
+
 def generate_scripts_for_problem(problem: Problem):
     """Calls Gemini to write generator and solution scripts."""    
     prompt = f"""
@@ -72,18 +74,21 @@ Do not include any extra text. Make sure the codes are clean and handle large ed
         response = model.generate_content(prompt)
         text = response.text
         
-        # Parse output for two blocks
-        blocks = text.split("```python")
-        if len(blocks) < 3:
-            raise ValueError("LLM response did not contain exactly two python code blocks")
-            
-        gen_code = blocks[1].split("```")[0].strip()
-        sol_code = blocks[2].split("```")[0].strip()
+        # Robust Regex Parsing
+        # Match ```python ... ``` or just ``` ... ```
+        pattern = r"```(?:python)?\n?(.*?)```"
+        blocks = re.findall(pattern, text, re.DOTALL)
         
-        return gen_code, sol_code
+        if len(blocks) < 2:
+            return None, None, "LLM không trả về đủ 2 block code Python hợp lệ."
+            
+        gen_code = blocks[0].strip()
+        sol_code = blocks[1].strip()
+        
+        return gen_code, sol_code, ""
     except Exception as e:
         print(f"Failed to generate scripts via LLM: {e}")
-        return None, None
+        return None, None, f"Lỗi gọi Gemini API: {str(e)}"
 
 def auto_generate_testcases(problem_code: str, num_tests: int = 10):
     db = SessionLocal()
@@ -93,13 +98,13 @@ def auto_generate_testcases(problem_code: str, num_tests: int = 10):
         db.close()
         return 0, f"Lỗi: Không tìm thấy bài tập {problem_code}"
 
-    gen_code, sol_code = generate_scripts_for_problem(problem)
+    gen_code, sol_code, err_msg = generate_scripts_for_problem(problem)
     
     if not gen_code or not sol_code:
         db.close()
-        return 0, "Sinh script bằng AI thất bại. Vui lòng thử lại sau."
+        return 0, err_msg
         
-    count = run_local_generator(
+    count, run_err = run_local_generator(
         problem_code=problem_code,
         generator_code=gen_code,
         solution_code=sol_code,
@@ -110,9 +115,11 @@ def auto_generate_testcases(problem_code: str, num_tests: int = 10):
     db.close()
     
     if count is not False:
+        if count == 0:
+             return 0, f"Code do AI sinh ra bị lỗi khi chạy thực tế:\n{run_err}"
         return count, ""
     else:
-        return 0, "Lỗi trong quá trình chạy testcase_runner."
+        return 0, f"Lỗi hệ thống: {run_err}"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI Testcase Generator")
