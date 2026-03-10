@@ -16,7 +16,8 @@
         border: 1px solid #d1d5db;
         border-radius: 0.5rem;
         font-size: 13px;
-        height: 400px;
+        height: 100%;
+        flex-grow: 1;
         font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
     }
 
@@ -32,109 +33,106 @@
 {% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-140px)]">
     <!-- Problem Description -->
-    <div class="lg:col-span-2">
-        <div class="bg-white rounded-lg shadow-sm border p-6">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <span class="text-sm font-mono text-[#c82333] bg-red-50 px-2 py-1 rounded">{{ problem.code }}</span>
-                    <span class="ml-2 text-sm diff-{{ problem.difficulty|lower }} px-2 py-1 rounded
+    <div class="bg-white rounded-lg shadow-sm border p-6 overflow-y-auto h-full">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <span class="text-sm font-mono text-[#c82333] bg-red-50 px-2 py-1 rounded">{{ problem.code }}</span>
+                <span class="ml-2 text-sm diff-{{ problem.difficulty|lower }} px-2 py-1 rounded
                         {% if problem.difficulty == 'Easy' %}bg-green-50
                         {% elif problem.difficulty == 'Medium' %}bg-yellow-50
                         {% else %}bg-red-50{% endif %}">
-                        {{ problem.difficulty }}
-                    </span>
-                </div>
-                <div class="text-sm text-gray-500">
-                    Thời gian: {{ problem.time_limit }}s | Bộ nhớ: {{ problem.memory_limit }}MB
-                </div>
+                    {{ problem.difficulty }}
+                </span>
             </div>
-
-            <h1 class="text-2xl font-bold text-gray-800 mb-4">{{ problem.title }}</h1>
-
-            <div class="prose max-w-none markdown-body" id="problem-content">
-                <div class="raw-content hidden">{{ problem.description }}</div>
-                <div class="rendered-content"></div>
-
-                {% if problem.input_description %}
-                <h3 class="text-lg font-semibold mt-6 mb-2">Dữ liệu vào</h3>
-                <div class="raw-content hidden">{{ problem.input_description }}</div>
-                <div class="rendered-content"></div>
-                {% endif %}
-
-                {% if problem.output_description %}
-                <h3 class="text-lg font-semibold mt-6 mb-2">Kết quả</h3>
-                <div class="raw-content hidden">{{ problem.output_description }}</div>
-                <div class="rendered-content"></div>
-                {% endif %}
+            <div class="text-sm text-gray-500">
+                Thời gian: {{ problem.time_limit }}s | Bộ nhớ: {{ problem.memory_limit }}MB
             </div>
+        </div>
 
-            <!-- Sample Test Cases -->
-            {% if sample_testcases %}
-            <h3 class="text-lg font-semibold mt-6 mb-3">Ví dụ</h3>
-            {% for tc in sample_testcases %}
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div class="relative group">
-                    <div class="flex justify-between items-center mb-1">
-                        <div class="text-sm font-medium text-gray-500">Input</div>
-                        <button onclick="copyToClipboard(this, 'tc-in-{{ loop.index }}')"
-                            class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
-                            Copy</button>
-                    </div>
-                    <pre id="tc-in-{{ loop.index }}"
-                        class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ tc.input_data }}</pre>
-                </div>
-                <div class="relative group">
-                    <div class="flex justify-between items-center mb-1">
-                        <div class="text-sm font-medium text-gray-500">Output</div>
-                        <button onclick="copyToClipboard(this, 'tc-out-{{ loop.index }}')"
-                            class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
-                            Copy</button>
-                    </div>
-                    <pre id="tc-out-{{ loop.index }}"
-                        class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ tc.expected_output }}</pre>
-                </div>
-            </div>
-            {% endfor %}
-            {% elif problem.sample_input or problem.sample_output %}
-            <h3 class="text-lg font-semibold mt-6 mb-3">Ví dụ</h3>
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div class="relative group">
-                    <div class="flex justify-between items-center mb-1">
-                        <div class="text-sm font-medium text-gray-500">Input</div>
-                        <button onclick="copyToClipboard(this, 'tc-in-0')"
-                            class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
-                            Copy</button>
-                    </div>
-                    <pre id="tc-in-0"
-                        class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ problem.sample_input }}</pre>
-                </div>
-                <div class="relative group">
-                    <div class="flex justify-between items-center mb-1">
-                        <div class="text-sm font-medium text-gray-500">Output</div>
-                        <button onclick="copyToClipboard(this, 'tc-out-0')"
-                            class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
-                            Copy</button>
-                    </div>
-                    <pre id="tc-out-0"
-                        class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ problem.sample_output }}</pre>
-                </div>
-            </div>
+        <h1 class="text-2xl font-bold text-gray-800 mb-4">{{ problem.title }}</h1>
+
+        <div class="prose max-w-none markdown-body" id="problem-content">
+            <div class="raw-content hidden">{{ problem.description }}</div>
+            <div class="rendered-content"></div>
+
+            {% if problem.input_description %}
+            <h3 class="text-lg font-semibold mt-6 mb-2">Dữ liệu vào</h3>
+            <div class="raw-content hidden">{{ problem.input_description }}</div>
+            <div class="rendered-content"></div>
             {% endif %}
 
-            {% if user and user.is_admin %}
-            <div class="mt-4 pt-4 border-t">
-                <a href="/admin/problem/{{ problem.code }}/testcases" class="text-[#c82333] hover:underline text-sm">⚙️
-                    Quản lý test cases</a>
-            </div>
+            {% if problem.output_description %}
+            <h3 class="text-lg font-semibold mt-6 mb-2">Kết quả</h3>
+            <div class="raw-content hidden">{{ problem.output_description }}</div>
+            <div class="rendered-content"></div>
             {% endif %}
         </div>
-    </div>
 
+        <!-- Sample Test Cases -->
+        {% if sample_testcases %}
+        <h3 class="text-lg font-semibold mt-6 mb-3">Ví dụ</h3>
+        {% for tc in sample_testcases %}
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="relative group">
+                <div class="flex justify-between items-center mb-1">
+                    <div class="text-sm font-medium text-gray-500">Input</div>
+                    <button onclick="copyToClipboard(this, 'tc-in-{{ loop.index }}')"
+                        class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
+                        Copy</button>
+                </div>
+                <pre id="tc-in-{{ loop.index }}"
+                    class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ tc.input_data }}</pre>
+            </div>
+            <div class="relative group">
+                <div class="flex justify-between items-center mb-1">
+                    <div class="text-sm font-medium text-gray-500">Output</div>
+                    <button onclick="copyToClipboard(this, 'tc-out-{{ loop.index }}')"
+                        class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
+                        Copy</button>
+                </div>
+                <pre id="tc-out-{{ loop.index }}"
+                    class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ tc.expected_output }}</pre>
+            </div>
+        </div>
+        {% endfor %}
+        {% elif problem.sample_input or problem.sample_output %}
+        <h3 class="text-lg font-semibold mt-6 mb-3">Ví dụ</h3>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="relative group">
+                <div class="flex justify-between items-center mb-1">
+                    <div class="text-sm font-medium text-gray-500">Input</div>
+                    <button onclick="copyToClipboard(this, 'tc-in-0')"
+                        class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
+                        Copy</button>
+                </div>
+                <pre id="tc-in-0"
+                    class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ problem.sample_input }}</pre>
+            </div>
+            <div class="relative group">
+                <div class="flex justify-between items-center mb-1">
+                    <div class="text-sm font-medium text-gray-500">Output</div>
+                    <button onclick="copyToClipboard(this, 'tc-out-0')"
+                        class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
+                        Copy</button>
+                </div>
+                <pre id="tc-out-0"
+                    class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ problem.sample_output }}</pre>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if user and user.is_admin %}
+        <div class="mt-4 pt-4 border-t">
+            <a href="/admin/problem/{{ problem.code }}/testcases" class="text-[#c82333] hover:underline text-sm">⚙️
+                Quản lý test cases</a>
+        </div>
+        {% endif %}
+    </div>
     <!-- Submit Code Panel -->
-    <div class="lg:col-span-1">
-        <div class="bg-white rounded-lg shadow-sm border p-6 sticky top-4">
+    <div class="flex flex-col gap-4 h-[calc(100vh-140px)]">
+        <div class="bg-white rounded-lg shadow-sm border p-6 flex flex-col flex-grow overflow-hidden">
             <h3 class="text-lg font-semibold mb-4">Nộp bài</h3>
 
             {% if user %}
@@ -164,10 +162,10 @@
                     </select>
                 </div>
 
-                <div class="mb-4">
+                <div class="mb-4 flex-grow flex flex-col min-h-0">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Mã nguồn</label>
                     <textarea name="source_code" id="source-code" rows="15" required class="hidden"></textarea>
-                    <div id="code-editor-wrapper"></div>
+                    <div id="code-editor-wrapper" class="flex-grow overflow-hidden"></div>
                 </div>
 
                 <button type="submit"
@@ -336,8 +334,8 @@
 
         <!-- User's Submissions -->
         {% if user_submissions %}
-        <div class="bg-white rounded-lg shadow-sm border p-6 mt-4">
-            <h3 class="text-lg font-semibold mb-3">Bài nộp gần đây</h3>
+        <div class="bg-white rounded-lg shadow-sm border p-4 overflow-y-auto max-h-48">
+            <h3 class="text-sm font-semibold mb-2">Bài nộp gần đây</h3>
             <div class="space-y-2">
                 {% for s in user_submissions %}
                 <a href="/submission/{{ s.id }}" class="block p-2 rounded hover:bg-gray-50 border text-sm">

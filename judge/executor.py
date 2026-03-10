@@ -155,18 +155,52 @@ class Judge:
             self.db.commit()
 
     def _run_testcase(self, run_cmd, testcase, time_limit, tmp_dir):
-        """Run code against a single test case."""
+        """Run code against a single test case with basic limits and process group handling."""
+        start_time = time.time()
+        process = None
+        
         try:
-            start_time = time.time()
-            process = subprocess.run(
+            # On Unix-like systems, we start the process in a new session
+            # so we can kill the entire process group if it times out
+            kwargs = {}
+            if platform.system() != "Windows":
+                kwargs["start_new_session"] = True
+
+            process = subprocess.Popen(
                 run_cmd,
                 shell=True,
-                input=testcase.input_data,
-                capture_output=True,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
-                timeout=time_limit,
                 cwd=tmp_dir,
+                **kwargs
             )
+            
+            try:
+                stdout_data, stderr_data = process.communicate(
+                    input=testcase.input_data, timeout=time_limit
+                )
+            except subprocess.TimeoutExpired:
+                # Kill the process and all its children
+                if platform.system() != "Windows":
+                    import signal
+                    try:
+                        os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                else:
+                    # Windows fallback
+                    process.kill()
+                    
+                process.communicate() # wait for process to fully exit
+                return {
+                    "status": SubmissionStatus.TIME_LIMIT,
+                    "time_ms": time_limit * 1000,
+                    "memory_kb": 0,
+                    "output": "",
+                }
+
             elapsed = (time.time() - start_time) * 1000  # ms
 
             if process.returncode != 0:
@@ -174,13 +208,12 @@ class Judge:
                     "status": SubmissionStatus.RUNTIME_ERROR,
                     "time_ms": elapsed,
                     "memory_kb": 0,
-                    "output": process.stderr[:2000],
+                    "output": stderr_data[:2000],
                 }
 
-            actual_output = process.stdout.strip()
+            actual_output = stdout_data.strip()
             expected_output = testcase.expected_output.strip()
 
-            # Compare output (line by line, ignoring trailing whitespace)
             if self._compare_output(actual_output, expected_output):
                 return {
                     "status": SubmissionStatus.ACCEPTED,
@@ -196,14 +229,18 @@ class Judge:
                     "output": actual_output,
                 }
 
-        except subprocess.TimeoutExpired:
-            return {
-                "status": SubmissionStatus.TIME_LIMIT,
-                "time_ms": time_limit * 1000,
-                "memory_kb": 0,
-                "output": "",
-            }
         except Exception as e:
+            # Ensure process is killed on unexpected errors
+            if process:
+                if platform.system() != "Windows":
+                    import signal
+                    try:
+                        os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                else:
+                    process.kill()
+
             return {
                 "status": SubmissionStatus.RUNTIME_ERROR,
                 "time_ms": 0,

@@ -1,12 +1,11 @@
 """
 Submission routes: submit code, view results.
 """
-from fastapi import APIRouter, Request, Depends, Form, HTTPException
+from fastapi import APIRouter, Request, Depends, Form, HTTPException, BackgroundTasks
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from config import BASE_DIR
 from sqlalchemy.orm import Session
-import threading
 
 from database import get_db, SessionLocal
 from models import Problem, Submission, SubmissionStatus, User
@@ -31,6 +30,7 @@ def run_judge_async(submission_id: int):
 @router.post("/submit")
 async def submit_code(
     request: Request,
+    background_tasks: BackgroundTasks,
     problem_id: int = Form(...),
     language: str = Form(...),
     source_code: str = Form(...),
@@ -67,8 +67,7 @@ async def submit_code(
     db.refresh(submission)
 
     # Run judge in background
-    thread = threading.Thread(target=run_judge_async, args=(submission.id,))
-    thread.start()
+    background_tasks.add_task(run_judge_async, submission.id)
 
     return RedirectResponse(
         url=f"/submission/{submission.id}", status_code=302
