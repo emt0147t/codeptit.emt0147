@@ -118,6 +118,11 @@ def run_local_generator(problem_code: str, generator_code: str, solution_code: s
 
         db.commit()
     db.close()
+    
+    if generated_count == 0 and accum_error:
+        # Append the top of the generator and solution code to the error so the admin knows what failed
+        accum_error += f"\n--- Generator Code (AI) ---\n{generator_code[:500]}...\n"
+        
     return generated_count, accum_error
 
 if __name__ == "__main__":
