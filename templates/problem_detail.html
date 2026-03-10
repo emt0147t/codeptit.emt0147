@@ -268,36 +268,7 @@
             <div class="prose max-w-none markdown-body" id="problem-content">
                 <div class="raw-content hidden">{{ problem.description }}</div>
                 <div class="rendered-content"></div>
-
-                {% if problem.input_description %}
-                <h3 style="font-size:15px; font-weight:700; margin-top:20px; margin-bottom:6px;">Dữ liệu vào</h3>
-                <div class="raw-content hidden">{{ problem.input_description }}</div>
-                <div class="rendered-content"></div>
-                {% endif %}
-
-                {% if problem.output_description %}
-                <h3 style="font-size:15px; font-weight:700; margin-top:20px; margin-bottom:6px;">Kết quả</h3>
-                <div class="raw-content hidden">{{ problem.output_description }}</div>
-                <div class="rendered-content"></div>
-                {% endif %}
             </div>
-
-            <!-- Sample Test Cases as Example blocks -->
-            {% if sample_testcases %}
-            {% for tc in sample_testcases %}
-            <div class="example-block">
-                <div class="label">Example {{ loop.index }}:</div>
-                <pre><strong>Input:</strong> {{ tc.input_data }}
-<strong>Output:</strong> {{ tc.expected_output }}</pre>
-            </div>
-            {% endfor %}
-            {% elif problem.sample_input or problem.sample_output %}
-            <div class="example-block">
-                <div class="label">Example 1:</div>
-                <pre><strong>Input:</strong> {{ problem.sample_input }}
-<strong>Output:</strong> {{ problem.sample_output }}</pre>
-            </div>
-            {% endif %}
 
             {% if user and user.is_admin %}
             <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
