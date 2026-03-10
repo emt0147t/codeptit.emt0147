@@ -18,19 +18,20 @@ from database import SessionLocal
 from models import Problem
 from tools.testcase_runner import run_local_generator
 
-# Ensure your GEMINI_API_KEY or GOOGLE_API_KEY is available in the environment variables
-load_dotenv()
-API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-
-if API_KEY:
-    genai.configure(api_key=API_KEY)
-else:
-    print("Warning: Neither GEMINI_API_KEY nor GOOGLE_API_KEY found in environment variables. Auto-generation will fail.")
-
 import re
 
 def generate_scripts_for_problem(problem: Problem):
-    """Calls Gemini to write generator and solution scripts."""    
+    """Calls Gemini to write generator and solution scripts."""
+    # Ensure environment is loaded right before using
+    env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
+    load_dotenv(dotenv_path=env_path)
+    API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    
+    if not API_KEY:
+        return None, None, "Lỗi Server: Không tìm thấy GEMINI_API_KEY trong biến môi trường hoặc file .env!"
+        
+    genai.configure(api_key=API_KEY)
+    
     prompt = f"""
 I have a programming problem on an Online Judge platform. I need two scripts to generate test data for it.
 1. A Python 3 script capable of randomly generating a valid input file to STDOUT.
