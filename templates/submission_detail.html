@@ -9,14 +9,23 @@
             <h1 class="text-lg font-bold text-gray-800">
                 Kết quả nộp bài <span class="text-brand-600">#{{ submission.id }}</span>
             </h1>
-            <a href="/problem/{{ problem.code }}"
-                class="text-sm text-brand-600 hover:text-brand-700 font-medium transition flex items-center gap-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                {{ problem.code }} - {{ problem.title }}
-            </a>
+            <div class="flex items-center gap-3">
+                <a href="/category/{{ problem.category }}"
+                    class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Về danh sách bài
+                </a>
+                <a href="/problem/{{ problem.code }}"
+                    class="text-sm border border-brand-200 bg-brand-50 text-brand-600 px-3 py-1.5 rounded-lg hover:bg-brand-100 hover:border-brand-300 font-medium transition flex items-center gap-1.5 shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    {{ problem.code }} - {{ problem.title }}
+                </a>
+            </div>
         </div>
 
         <!-- Summary Cards -->
