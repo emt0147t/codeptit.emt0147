@@ -253,8 +253,13 @@
 
         <div class="lc-pane-body">
             <!-- Title -->
-            <h1 style="font-size: 22px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">
-                {{ problem.code }}. {{ problem.title }}
+            <h1 style="font-size: 22px; font-weight: 700; color: #1f2937; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                <span>{{ problem.code }}. {{ problem.title }}</span>
+                {% if is_solved %}
+                <span class="text-emerald-500 flex items-center justify-center bg-emerald-50 rounded-full w-7 h-7" title="Bạn đã hoàn thành bài tập này">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </span>
+                {% endif %}
             </h1>
 
             <!-- Tags -->

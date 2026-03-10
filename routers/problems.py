@@ -147,11 +147,14 @@ async def problem_detail(
 
     # Get user's submissions for this problem
     user_submissions = []
+    is_solved = False
     if user:
         user_submissions = db.query(Submission).filter(
             Submission.user_id == user.id,
             Submission.problem_id == problem.id
         ).order_by(Submission.created_at.desc()).limit(10).all()
+        
+        is_solved = any(sub.status == SubmissionStatus.ACCEPTED for sub in user_submissions)
 
     return templates.TemplateResponse("problem_detail.html", {
         "request": request,
@@ -159,6 +162,7 @@ async def problem_detail(
         "problem": problem,
         "sample_testcases": sample_testcases,
         "user_submissions": user_submissions,
+        "is_solved": is_solved,
     })
 
 
