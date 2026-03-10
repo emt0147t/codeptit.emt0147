@@ -10,10 +10,12 @@
         <div class="absolute bottom-10 right-10 w-96 h-96 bg-brand-400 rounded-full blur-3xl"></div>
     </div>
     <div class="relative text-center">
-        <div class="flex items-center justify-center gap-3 mb-3 animate-fade-in">
+        <div class="flex flex-row items-center justify-center gap-3 mb-3 animate-fade-in">
             <img src="/static/cr7-logo-svg-vector.svg" alt="CodePTITclone Logo" class="h-16 w-auto drop-shadow-2xl">
-            <h1 class="text-5xl font-extrabold tracking-tight">
-                <span class="text-gray-200">PTIT</span><span class="text-brand-200 italic font-medium text-3xl">clone</span>
+            <h1 class="text-5xl font-extrabold tracking-tight flex items-center">
+                <span class="text-white">CODE</span>
+                <span class="text-gray-200">PTIT</span>
+                <span class="text-brand-200 italic font-medium text-3xl ml-1">clone</span>
             </h1>
         </div>
         <p class="text-lg text-brand-100 max-w-xl mx-auto mb-8 animate-fade-in" style="animation-delay: 0.1s">Luyện tập
@@ -58,7 +60,7 @@
             class="group block bg-white rounded-xl border border-gray-100 overflow-hidden card-hover shadow-sm">
             <div class="p-5">
                 <div class="flex items-center gap-3 mb-3">
-                    <span class="text-2xl">{{ cat.icon }}</span>
+                    <span class="flex-shrink-0">{{ cat.icon | safe }}</span>
                     <div>
                         <h3 class="text-base font-bold text-gray-800 group-hover:text-brand-600 transition">{{ cat.name
                             }}</h3>
