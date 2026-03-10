@@ -73,7 +73,7 @@ class TestCase(Base):
     __tablename__ = "testcases"
 
     id = Column(Integer, primary_key=True, index=True)
-    problem_id = Column(Integer, ForeignKey("problems.id"), nullable=False)
+    problem_id = Column(Integer, ForeignKey("problems.id"), nullable=False, index=True)
     input_data = Column(Text, nullable=False)
     expected_output = Column(Text, nullable=False)
     is_sample = Column(Boolean, default=False)  # Shown to users
@@ -86,8 +86,8 @@ class Submission(Base):
     __tablename__ = "submissions"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    problem_id = Column(Integer, ForeignKey("problems.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    problem_id = Column(Integer, ForeignKey("problems.id"), nullable=False, index=True)
     language = Column(String(20), nullable=False)
     source_code = Column(Text, nullable=False)
     status = Column(String(30), default=SubmissionStatus.PENDING)

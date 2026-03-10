@@ -11,16 +11,23 @@ from database import get_db
 from models import User
 import bcrypt as _bcrypt
 
+from starlette.concurrency import run_in_threadpool
+import re
+
 router = APIRouter(tags=["auth"])
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
-def hash_password(password: str) -> str:
-    return _bcrypt.hashpw(password.encode('utf-8'), _bcrypt.gensalt()).decode('utf-8')
+async def hash_password(password: str) -> str:
+    return await run_in_threadpool(
+        lambda: _bcrypt.hashpw(password.encode('utf-8'), _bcrypt.gensalt()).decode('utf-8')
+    )
 
 
-def verify_password(password: str, hashed: str) -> bool:
-    return _bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+async def verify_password(password: str, hashed: str) -> bool:
+    return await run_in_threadpool(
+        lambda: _bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+    )
 
 
 def get_current_user(request: Request, db: Session = Depends(get_db)):
@@ -65,11 +72,19 @@ async def login(
     db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.username == username).first()
-    if not user or not verify_password(password, user.password_hash):
+    if not user:
         return templates.TemplateResponse("login.html", {
             "request": request,
             "error": "Sai tên đăng nhập hoặc mật khẩu"
         })
+    
+    is_valid = await verify_password(password, user.password_hash)
+    if not is_valid:
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": "Sai tên đăng nhập hoặc mật khẩu"
+        })
+        
     request.session["user_id"] = user.id
     return RedirectResponse(url="/", status_code=302)
 
@@ -95,6 +110,17 @@ async def register(
         return templates.TemplateResponse("register.html", {
             "request": request, "error": "Mật khẩu không khớp"
         })
+        
+    # Regex validation
+    if not re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email):
+        return templates.TemplateResponse("register.html", {
+            "request": request, "error": "Định dạng email không hợp lệ"
+        })
+        
+    if len(password) < 6:
+        return templates.TemplateResponse("register.html", {
+            "request": request, "error": "Mật khẩu phải chứa ít nhất 6 ký tự"
+        })
 
     if db.query(User).filter(User.username == username).first():
         return templates.TemplateResponse("register.html", {
@@ -106,11 +132,12 @@ async def register(
             "request": request, "error": "Email đã tồn tại"
         })
 
-    # Create user
+    # Create user hash in background threadpool
+    hashed_pwd = await hash_password(password)
     user = User(
         username=username,
         email=email,
-        password_hash=hash_password(password),
+        password_hash=hashed_pwd,
         is_admin=False
     )
     db.add(user)

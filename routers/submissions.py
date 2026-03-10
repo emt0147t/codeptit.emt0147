@@ -50,6 +50,7 @@ async def submit_code(
         raise HTTPException(status_code=400, detail="Source code is empty")
 
     # Create submission
+    source_code = source_code[:50000]  # Prevent DB bloat
     submission = Submission(
         user_id=user.id,
         problem_id=problem.id,
