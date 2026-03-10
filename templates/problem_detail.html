@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% block title %}{{ problem.code }} - {{ problem.title }}{% endblock %}
+{% block main_class %}w-full{% endblock %}
 
 {% block head %}
-<!-- CodeMirror 6 -->
+<!-- CodeMirror -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
@@ -12,350 +14,508 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
 <style>
-    .CodeMirror {
-        border: 1px solid #d1d5db;
-        border-radius: 0.5rem;
+    /* ====== LeetCode-style Layout ====== */
+    .lc-container {
+        display: flex;
+        gap: 6px;
+        height: calc(100vh - 80px);
+        padding: 6px;
+    }
+
+    /* Left & Right Panes */
+    .lc-pane {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 0;
+        background: #fff;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+
+    /* Pane Header Bar (dark) */
+    .lc-pane-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f7f7f8;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 0 12px;
+        height: 40px;
+        flex-shrink: 0;
         font-size: 13px;
-        height: 100%;
-        flex-grow: 1;
+    }
+
+    .lc-pane-header .tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 8px 12px;
+        color: #6b7280;
+        font-weight: 500;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.15s;
+        text-decoration: none;
+        font-size: 13px;
+    }
+
+    .lc-pane-header .tab:hover {
+        color: #374151;
+    }
+
+    .lc-pane-header .tab.active {
+        color: #1f2937;
+        border-bottom-color: #374151;
+    }
+
+    .lc-pane-header .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .lc-pane-header .header-actions button {
+        background: none;
+        border: none;
+        color: #6b7280;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        font-size: 16px;
+        line-height: 1;
+    }
+
+    .lc-pane-header .header-actions button:hover {
+        color: #374151;
+        background: #e5e7eb;
+    }
+
+    /* Pane Body */
+    .lc-pane-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px 24px;
+    }
+
+    /* Status Bar */
+    .lc-status-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f7f7f8;
+        border-top: 1px solid #e5e7eb;
+        padding: 4px 14px;
+        height: 28px;
+        flex-shrink: 0;
+        font-size: 11px;
+        color: #6b7280;
+    }
+
+    /* Code header specific */
+    .code-header-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .code-header-left .code-label {
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .lang-select {
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 12px;
+        outline: none;
+        background: #fff;
+        color: #374151;
+        cursor: pointer;
+    }
+
+    .lang-select:focus {
+        border-color: #f59e0b;
+    }
+
+    /* CodeMirror overrides */
+    .CodeMirror {
+        border: none !important;
+        border-radius: 0 !important;
+        font-size: 14px;
+        height: 100% !important;
         font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
     }
 
     .CodeMirror-focused {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        box-shadow: none !important;
     }
 
-    .CodeMirror-scroll {
-        min-height: 200px;
+    #code-editor-wrapper {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    /* Problem Tags */
+    .lc-tag {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 99px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-right: 6px;
+    }
+
+    .lc-tag-easy {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .lc-tag-medium {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .lc-tag-hard {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    /* Example blocks */
+    .example-block {
+        background: #f9fafb;
+        border-left: 3px solid #e5e7eb;
+        padding: 12px 16px;
+        margin: 12px 0;
+        border-radius: 0 6px 6px 0;
+        font-size: 14px;
+    }
+
+    .example-block pre {
+        margin: 4px 0 0 0;
+        font-family: 'Consolas', 'Monaco', monospace;
+        font-size: 13px;
+        white-space: pre-wrap;
+        color: #1f2937;
+    }
+
+    .example-block .label {
+        font-weight: 700;
+        color: #374151;
+    }
+
+    /* Submit button LeetCode style */
+    .lc-submit-btn {
+        background: #2cbb5d;
+        color: #fff;
+        border: none;
+        padding: 8px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+
+    .lc-submit-btn:hover {
+        background: #22a34d;
+    }
+
+    /* Submissions in right pane */
+    .lc-sub-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 12px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-140px)]">
-    <!-- Problem Description -->
-    <div class="bg-white rounded-lg shadow-sm border p-6 overflow-y-auto h-full">
-        <div class="flex items-center justify-between mb-4">
-            <div>
-                <span class="text-sm font-mono text-[#c82333] bg-red-50 px-2 py-1 rounded">{{ problem.code }}</span>
-                <span class="ml-2 text-sm diff-{{ problem.difficulty|lower }} px-2 py-1 rounded
-                        {% if problem.difficulty == 'Easy' %}bg-green-50
-                        {% elif problem.difficulty == 'Medium' %}bg-yellow-50
-                        {% else %}bg-red-50{% endif %}">
-                    {{ problem.difficulty }}
-                </span>
+<div class="lc-container">
+    <!-- ========== LEFT PANE: Problem Description ========== -->
+    <div class="lc-pane">
+        <div class="lc-pane-header">
+            <div style="display:flex; align-items:center;">
+                <span class="tab active">📄 Description</span>
+                <a href="/submissions?problem_code={{ problem.code }}" class="tab">📩 Submissions</a>
             </div>
-            <div class="text-sm text-gray-500">
-                Thời gian: {{ problem.time_limit }}s | Bộ nhớ: {{ problem.memory_limit }}MB
+            <div class="header-actions">
+                <button title="Expand"
+                    onclick="document.querySelector('.lc-container').style.gridTemplateColumns='1fr'; document.querySelectorAll('.lc-pane')[1].style.display='none';">⛶</button>
             </div>
         </div>
 
-        <h1 class="text-2xl font-bold text-gray-800 mb-4">{{ problem.title }}</h1>
+        <div class="lc-pane-body">
+            <!-- Title -->
+            <h1 style="font-size: 22px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">
+                {{ problem.code }}. {{ problem.title }}
+            </h1>
 
-        <div class="prose max-w-none markdown-body" id="problem-content">
-            <div class="raw-content hidden">{{ problem.description }}</div>
-            <div class="rendered-content"></div>
+            <!-- Tags -->
+            <div style="margin-bottom: 16px;">
+                <span class="lc-tag lc-tag-{{ problem.difficulty|lower }}">{{ problem.difficulty }}</span>
+                <span style="font-size: 12px; color: #9ca3af;">⏱ {{ problem.time_limit }}s &nbsp;💾 {{
+                    problem.memory_limit }}MB</span>
+            </div>
 
-            {% if problem.input_description %}
-            <h3 class="text-lg font-semibold mt-6 mb-2">Dữ liệu vào</h3>
-            <div class="raw-content hidden">{{ problem.input_description }}</div>
-            <div class="rendered-content"></div>
+            <!-- Description -->
+            <div class="prose max-w-none markdown-body" id="problem-content">
+                <div class="raw-content hidden">{{ problem.description }}</div>
+                <div class="rendered-content"></div>
+
+                {% if problem.input_description %}
+                <h3 style="font-size:15px; font-weight:700; margin-top:20px; margin-bottom:6px;">Dữ liệu vào</h3>
+                <div class="raw-content hidden">{{ problem.input_description }}</div>
+                <div class="rendered-content"></div>
+                {% endif %}
+
+                {% if problem.output_description %}
+                <h3 style="font-size:15px; font-weight:700; margin-top:20px; margin-bottom:6px;">Kết quả</h3>
+                <div class="raw-content hidden">{{ problem.output_description }}</div>
+                <div class="rendered-content"></div>
+                {% endif %}
+            </div>
+
+            <!-- Sample Test Cases as Example blocks -->
+            {% if sample_testcases %}
+            {% for tc in sample_testcases %}
+            <div class="example-block">
+                <div class="label">Example {{ loop.index }}:</div>
+                <pre><strong>Input:</strong> {{ tc.input_data }}
+<strong>Output:</strong> {{ tc.expected_output }}</pre>
+            </div>
+            {% endfor %}
+            {% elif problem.sample_input or problem.sample_output %}
+            <div class="example-block">
+                <div class="label">Example 1:</div>
+                <pre><strong>Input:</strong> {{ problem.sample_input }}
+<strong>Output:</strong> {{ problem.sample_output }}</pre>
+            </div>
             {% endif %}
 
-            {% if problem.output_description %}
-            <h3 class="text-lg font-semibold mt-6 mb-2">Kết quả</h3>
-            <div class="raw-content hidden">{{ problem.output_description }}</div>
-            <div class="rendered-content"></div>
+            {% if user and user.is_admin %}
+            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+                <a href="/admin/problem/{{ problem.code }}/testcases"
+                    style="color: #c82333; font-size: 13px; text-decoration: none;">⚙️ Quản lý test cases</a>
+            </div>
             {% endif %}
         </div>
 
-        <!-- Sample Test Cases -->
-        {% if sample_testcases %}
-        <h3 class="text-lg font-semibold mt-6 mb-3">Ví dụ</h3>
-        {% for tc in sample_testcases %}
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="relative group">
-                <div class="flex justify-between items-center mb-1">
-                    <div class="text-sm font-medium text-gray-500">Input</div>
-                    <button onclick="copyToClipboard(this, 'tc-in-{{ loop.index }}')"
-                        class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
-                        Copy</button>
-                </div>
-                <pre id="tc-in-{{ loop.index }}"
-                    class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ tc.input_data }}</pre>
-            </div>
-            <div class="relative group">
-                <div class="flex justify-between items-center mb-1">
-                    <div class="text-sm font-medium text-gray-500">Output</div>
-                    <button onclick="copyToClipboard(this, 'tc-out-{{ loop.index }}')"
-                        class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
-                        Copy</button>
-                </div>
-                <pre id="tc-out-{{ loop.index }}"
-                    class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ tc.expected_output }}</pre>
-            </div>
+        <div class="lc-status-bar">
+            <span>{{ problem.total_submissions }} submissions &bull; {{ problem.accepted_count }} accepted</span>
         </div>
-        {% endfor %}
-        {% elif problem.sample_input or problem.sample_output %}
-        <h3 class="text-lg font-semibold mt-6 mb-3">Ví dụ</h3>
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="relative group">
-                <div class="flex justify-between items-center mb-1">
-                    <div class="text-sm font-medium text-gray-500">Input</div>
-                    <button onclick="copyToClipboard(this, 'tc-in-0')"
-                        class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
-                        Copy</button>
-                </div>
-                <pre id="tc-in-0"
-                    class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ problem.sample_input }}</pre>
-            </div>
-            <div class="relative group">
-                <div class="flex justify-between items-center mb-1">
-                    <div class="text-sm font-medium text-gray-500">Output</div>
-                    <button onclick="copyToClipboard(this, 'tc-out-0')"
-                        class="text-xs text-gray-400 hover:text-[#c82333] hidden group-hover:block transition">📋
-                        Copy</button>
-                </div>
-                <pre id="tc-out-0"
-                    class="bg-gray-900 text-green-400 p-3 rounded-lg text-sm overflow-x-auto">{{ problem.sample_output }}</pre>
-            </div>
-        </div>
-        {% endif %}
-
-        {% if user and user.is_admin %}
-        <div class="mt-4 pt-4 border-t">
-            <a href="/admin/problem/{{ problem.code }}/testcases" class="text-[#c82333] hover:underline text-sm">⚙️
-                Quản lý test cases</a>
-        </div>
-        {% endif %}
     </div>
-    <!-- Submit Code Panel -->
-    <div class="flex flex-col gap-4 h-[calc(100vh-140px)]">
-        <div class="bg-white rounded-lg shadow-sm border p-6 flex flex-col flex-grow overflow-hidden">
-            <h3 class="text-lg font-semibold mb-4">Nộp bài</h3>
 
-            {% if user %}
-            <form method="POST" action="/submit">
-                <input type="hidden" name="problem_id" value="{{ problem.id }}">
+    <!-- ========== RIGHT PANE: Code Editor ========== -->
+    <div class="lc-pane">
+        <div class="lc-pane-header">
+            <div class="code-header-left">
+                <span class="code-label">&lt;/&gt; Code</span>
+                {% if user %}
+                <select name="language" id="language-select" class="lang-select">
+                    <option value="cpp">C++ 17</option>
+                    <option value="python">Python 3</option>
+                    <option value="c">C</option>
+                </select>
+                <span style="font-size:11px; color:#9ca3af;">• Auto</span>
+                {% endif %}
+            </div>
+            <div class="header-actions">
+                <select id="theme-select" class="lang-select" style="font-size:11px;">
+                    <option value="dracula">🌙 Dark</option>
+                    <option value="default">☀️ Light</option>
+                </select>
+                <button id="btn-reset" title="Reset code">↺</button>
+                <button id="btn-undo" title="Undo">⟲</button>
+                <button id="btn-redo" title="Redo">⟳</button>
+            </div>
+        </div>
 
-                <div class="mb-4">
-                    <div class="flex justify-between mb-1">
-                        <label class="block text-sm font-medium text-gray-700">Ngôn ngữ</label>
-                        <div class="flex gap-2">
-                            <select id="theme-select" class="text-xs border rounded px-1 outline-none">
-                                <option value="dracula">Dracula</option>
-                                <option value="default">Light</option>
-                            </select>
-                            <select id="font-select" class="text-xs border rounded px-1 outline-none">
-                                <option value="13px">13px</option>
-                                <option value="15px">15px</option>
-                                <option value="17px">17px</option>
-                            </select>
-                        </div>
-                    </div>
-                    <select name="language" id="language-select"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#c82333] outline-none mb-2">
-                        <option value="python">Python 3</option>
-                        <option value="cpp">C++ 17</option>
-                        <option value="c">C</option>
-                    </select>
+        {% if user %}
+        <form method="POST" action="/submit" id="submit-form"
+            style="flex:1; display:flex; flex-direction:column; min-height:0;">
+            <input type="hidden" name="problem_id" value="{{ problem.id }}">
+            <input type="hidden" name="language" id="hidden-language" value="cpp">
+            <textarea name="source_code" id="source-code" required class="hidden"></textarea>
+            <div id="code-editor-wrapper"></div>
+
+            <!-- Bottom bar with submit -->
+            <div class="lc-status-bar" style="justify-content: space-between;">
+                <div style="display:flex; align-items:center; gap: 12px;">
+                    <span id="save-indicator">Saved</span>
+                    {% if user_submissions %}
+                    <span style="color:#6b7280;">|</span>
+                    {% for s in user_submissions[:3] %}
+                    <a href="/submission/{{ s.id }}" style="text-decoration:none; font-size:11px;" class="
+                        {% if s.status == 'Accepted' %}status-accepted
+                        {% elif s.status == 'Wrong Answer' %}status-wrong
+                        {% elif s.status == 'Time Limit Exceeded' %}status-tle
+                        {% elif s.status == 'Compilation Error' %}status-ce
+                        {% elif s.status == 'Runtime Error' %}status-re
+                        {% else %}status-pending{% endif %}
+                    ">{{ s.status }} ({{ "%.0f"|format(s.score) }}%)</a>
+                    {% endfor %}
+                    {% endif %}
                 </div>
-
-                <div class="mb-4 flex-grow flex flex-col min-h-0">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Mã nguồn</label>
-                    <textarea name="source_code" id="source-code" rows="15" required class="hidden"></textarea>
-                    <div id="code-editor-wrapper" class="flex-grow overflow-hidden"></div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span id="cursor-pos">Ln 1, Col 1</span>
+                    <button type="submit" class="lc-submit-btn">🚀 Nộp bài</button>
                 </div>
+            </div>
+        </form>
 
-                <button type="submit"
-                    class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 rounded-lg transition">
-                    🚀 Nộp bài
-                </button>
-            </form>
+        <script>
+            // Utility: Copy to clipboard
+            function copyToClipboard(btn, targetId) {
+                const text = document.getElementById(targetId).textContent;
+                navigator.clipboard.writeText(text).then(() => {
+                    const original = btn.textContent;
+                    btn.textContent = '✅ Copied!';
+                    setTimeout(() => { btn.textContent = original; }, 1500);
+                });
+            }
 
-            <script>
-                // Utility: Copy to clipboard
-                function copyToClipboard(btn, targetId) {
-                    const text = document.getElementById(targetId).textContent;
-                    navigator.clipboard.writeText(text).then(() => {
-                        const originalText = btn.textContent;
-                        btn.textContent = '✅ Đã copy!';
-                        setTimeout(() => { btn.textContent = originalText; }, 2000);
+            // Render Markdown + KaTeX
+            document.addEventListener("DOMContentLoaded", function () {
+                if (typeof marked !== 'undefined') {
+                    marked.use({ breaks: true, gfm: true });
+                    document.querySelectorAll('.raw-content').forEach((el) => {
+                        const mdHtml = marked.parse(el.textContent);
+                        const cleanHtml = DOMPurify.sanitize(mdHtml);
+                        const target = el.nextElementSibling;
+                        target.innerHTML = cleanHtml;
+                        renderMathInElement(target, {
+                            delimiters: [
+                                { left: '$$', right: '$$', display: true },
+                                { left: '$', right: '$', display: false },
+                                { left: '\\(', right: '\\)', display: false },
+                                { left: '\\[', right: '\\]', display: true }
+                            ],
+                            throwOnError: false
+                        });
                     });
                 }
+            });
 
-                // Render Markdown + KaTeX
-                document.addEventListener("DOMContentLoaded", function () {
-                    if (typeof marked !== 'undefined') {
-                        // Cấu hình marked để render break lines tốt hơn
-                        marked.use({
-                            breaks: true,
-                            gfm: true
-                        });
+            // ====== Code Editor ======
+            (function () {
+                const langModes = { 'python': 'python', 'cpp': 'text/x-c++src', 'c': 'text/x-csrc' };
+                const langTemplates = {
+                    'python': '# Code Python tại đây\n\n',
+                    'cpp': '#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}\n',
+                    'c': '#include <stdio.h>\n\nint main() {\n    \n    return 0;\n}\n'
+                };
 
-                        const textAreas = document.querySelectorAll('.raw-content');
-                        textAreas.forEach((el) => {
-                            const rawText = el.textContent;
-                            // Dùng marked parsing
-                            const mdHtml = marked.parse(rawText);
-                            // Clean HTML
-                            const cleanHtml = DOMPurify.sanitize(mdHtml);
+                const extPrefix = 'oj_code_{{ problem.id }}_';
+                const textarea = document.getElementById('source-code');
+                const wrapper = document.getElementById('code-editor-wrapper');
+                const langSelect = document.getElementById('language-select');
+                const hiddenLang = document.getElementById('hidden-language');
+                const themeSelect = document.getElementById('theme-select');
+                const cursorPos = document.getElementById('cursor-pos');
+                const saveIndicator = document.getElementById('save-indicator');
 
-                            const renderTarget = el.nextElementSibling;
-                            renderTarget.innerHTML = cleanHtml;
+                // Restore settings
+                const savedLang = localStorage.getItem('oj_lang') || 'cpp';
+                const savedTheme = localStorage.getItem('oj_theme') || 'dracula';
+                langSelect.value = savedLang;
+                hiddenLang.value = savedLang;
+                themeSelect.value = savedTheme;
 
-                            // Render Math trên target đã render HTML
-                            renderMathInElement(renderTarget, {
-                                delimiters: [
-                                    { left: '$$', right: '$$', display: true },
-                                    { left: '$', right: '$', display: false },
-                                    { left: '\\(', right: '\\)', display: false },
-                                    { left: '\\[', right: '\\]', display: true }
-                                ],
-                                throwOnError: false
-                            });
-                        });
+                let initialCode = localStorage.getItem(extPrefix + langSelect.value) || langTemplates[langSelect.value] || '';
+
+                const editor = CodeMirror(wrapper, {
+                    value: initialCode,
+                    mode: langModes[langSelect.value] || 'text/x-c++src',
+                    theme: savedTheme,
+                    lineNumbers: true,
+                    matchBrackets: true,
+                    autoCloseBrackets: true,
+                    styleActiveLine: true,
+                    indentUnit: 4,
+                    tabSize: 4,
+                    indentWithTabs: false,
+                    lineWrapping: false,
+                    extraKeys: {
+                        'Tab': function (cm) {
+                            if (cm.somethingSelected()) cm.indentSelection('add');
+                            else cm.replaceSelection('    ', 'end');
+                        },
+                        'Shift-Tab': function (cm) { cm.indentSelection('subtract'); }
                     }
                 });
 
-                // Code Editor Logic
-                (function () {
-                    const langModes = {
-                        'python': 'python',
-                        'cpp': 'text/x-c++src',
-                        'c': 'text/x-csrc'
-                    };
-                    const langTemplates = {
-                        'python': '# Code Python tại đây\n\n',
-                        'cpp': '#include <iostream>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}\n',
-                        'c': '#include <stdio.h>\n\nint main() {\n    \n    return 0;\n}\n'
-                    };
+                // Cursor position tracking
+                editor.on('cursorActivity', function () {
+                    const pos = editor.getCursor();
+                    if (cursorPos) cursorPos.textContent = 'Ln ' + (pos.line + 1) + ', Col ' + (pos.ch + 1);
+                });
 
-                    const extPrefix = 'oj_code_{{ problem.id }}_';
-
-                    const textarea = document.getElementById('source-code');
-                    const wrapper = document.getElementById('code-editor-wrapper');
-                    const select = document.getElementById('language-select');
-                    const themeSelect = document.getElementById('theme-select');
-                    const fontSelect = document.getElementById('font-select');
-
-                    // Khôi phục setting từ local storage
-                    const savedLang = localStorage.getItem('oj_lang') || 'python';
-                    const savedTheme = localStorage.getItem('oj_theme') || 'dracula';
-                    const savedFont = localStorage.getItem('oj_font') || '13px';
-
-                    select.value = savedLang;
-                    themeSelect.value = savedTheme;
-                    fontSelect.value = savedFont;
-
-                    // Set font size initial
-                    wrapper.style.fontSize = savedFont;
-
-                    let initialCode = localStorage.getItem(extPrefix + select.value) || langTemplates[select.value] || '';
-
-                    const editor = CodeMirror(wrapper, {
-                        value: initialCode,
-                        mode: langModes[select.value] || 'python',
-                        theme: savedTheme,
-                        lineNumbers: true,
-                        matchBrackets: true,
-                        autoCloseBrackets: true,
-                        styleActiveLine: true,
-                        indentUnit: 4,
-                        tabSize: 4,
-                        indentWithTabs: false,
-                        lineWrapping: false,
-                        extraKeys: {
-                            'Tab': function (cm) {
-                                if (cm.somethingSelected()) {
-                                    cm.indentSelection('add');
-                                } else {
-                                    cm.replaceSelection('    ', 'end');
-                                }
-                            },
-                            'Shift-Tab': function (cm) {
-                                cm.indentSelection('subtract');
-                            }
-                        }
-                    });
-
-                    // Tự động lưu nội dung source code
-                    editor.on('change', function () {
-                        const val = editor.getValue();
-                        textarea.value = val;
-                        localStorage.setItem(extPrefix + select.value, val);
-                    });
-
-                    // Đổi ngôn ngữ
-                    select.addEventListener('change', function () {
-                        const lang = this.value;
-                        localStorage.setItem('oj_lang', lang);
-                        editor.setOption('mode', langModes[lang] || 'python');
-
-                        const savedContent = localStorage.getItem(extPrefix + lang);
-                        if (savedContent) {
-                            editor.setValue(savedContent);
-                        } else {
-                            editor.setValue(langTemplates[lang] || '');
-                        }
-                    });
-
-                    // Thay đổi Theme
-                    themeSelect.addEventListener('change', function () {
-                        editor.setOption('theme', this.value);
-                        localStorage.setItem('oj_theme', this.value);
-                    });
-
-                    // Thay đổi Font
-                    fontSelect.addEventListener('change', function () {
-                        wrapper.querySelector('.CodeMirror').style.fontSize = this.value;
-                        editor.refresh();
-                        localStorage.setItem('oj_font', this.value);
-                    });
-
-                    // Sync trước submit (phòng hờ)
-                    editor.getWrapperElement().closest('form').addEventListener('submit', function () {
-                        textarea.value = editor.getValue();
-                    });
-
+                // Auto-save
+                let saveTimeout;
+                editor.on('change', function () {
                     textarea.value = editor.getValue();
+                    localStorage.setItem(extPrefix + langSelect.value, editor.getValue());
+                    if (saveIndicator) {
+                        saveIndicator.textContent = 'Saving...';
+                        clearTimeout(saveTimeout);
+                        saveTimeout = setTimeout(() => { saveIndicator.textContent = 'Saved'; }, 600);
+                    }
+                });
 
-                    // Refresh sau chút để nhận font
-                    setTimeout(() => editor.refresh(), 100);
-                })();
-            </script>
-            {% else %}
-            <p class="text-gray-500 text-sm">
-                Vui lòng <a href="/login" class="text-[#c82333] hover:underline">đăng nhập</a> để nộp bài.
-            </p>
-            {% endif %}
-        </div>
+                // Language change
+                langSelect.addEventListener('change', function () {
+                    const lang = this.value;
+                    localStorage.setItem('oj_lang', lang);
+                    hiddenLang.value = lang;
+                    editor.setOption('mode', langModes[lang] || 'python');
+                    const saved = localStorage.getItem(extPrefix + lang);
+                    editor.setValue(saved || langTemplates[lang] || '');
+                });
 
-        <!-- User's Submissions -->
-        {% if user_submissions %}
-        <div class="bg-white rounded-lg shadow-sm border p-4 overflow-y-auto max-h-48">
-            <h3 class="text-sm font-semibold mb-2">Bài nộp gần đây</h3>
-            <div class="space-y-2">
-                {% for s in user_submissions %}
-                <a href="/submission/{{ s.id }}" class="block p-2 rounded hover:bg-gray-50 border text-sm">
-                    <div class="flex justify-between items-center">
-                        <span class="
-                            {% if s.status == 'Accepted' %}status-accepted
-                            {% elif s.status == 'Wrong Answer' %}status-wrong
-                            {% elif s.status == 'Time Limit Exceeded' %}status-tle
-                            {% elif s.status == 'Compilation Error' %}status-ce
-                            {% elif s.status == 'Runtime Error' %}status-re
-                            {% else %}status-pending{% endif %}
-                        ">{{ s.status }}</span>
-                        <span class="text-gray-400 text-xs">{{ s.created_at.strftime('%d/%m %H:%M') }}</span>
-                    </div>
-                    <div class="text-gray-500 text-xs mt-1">
-                        {{ s.language }} | {{ "%.0f"|format(s.score) }}% | {{ "%.0f"|format(s.time_ms) }}ms
-                    </div>
-                </a>
-                {% endfor %}
-            </div>
+                // Theme change
+                themeSelect.addEventListener('change', function () {
+                    editor.setOption('theme', this.value);
+                    localStorage.setItem('oj_theme', this.value);
+                });
+
+                // Reset button
+                document.getElementById('btn-reset').addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const lang = langSelect.value;
+                    editor.setValue(langTemplates[lang] || '');
+                });
+
+                // Undo / Redo
+                document.getElementById('btn-undo').addEventListener('click', function (e) {
+                    e.preventDefault();
+                    editor.undo();
+                });
+                document.getElementById('btn-redo').addEventListener('click', function (e) {
+                    e.preventDefault();
+                    editor.redo();
+                });
+
+                // Sync before submit
+                document.getElementById('submit-form').addEventListener('submit', function () {
+                    textarea.value = editor.getValue();
+                    hiddenLang.value = langSelect.value;
+                });
+
+                textarea.value = editor.getValue();
+                setTimeout(() => editor.refresh(), 100);
+            })();
+        </script>
+        {% else %}
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; color:#6b7280; font-size:14px;">
+            Vui lòng <a href="/login" style="color:#c82333; margin: 0 4px; text-decoration:underline;">đăng nhập</a> để
+            nộp bài.
         </div>
         {% endif %}
     </div>
