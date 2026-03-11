@@ -26,6 +26,7 @@ async def problem_list(
     search: str = "",
     difficulty: str = "",
     category: str = "",
+    sub_category: str = "",
     db: Session = Depends(get_db)
 ):
     user = get_current_user(request, db)
@@ -33,6 +34,8 @@ async def problem_list(
 
     if category:
         query = query.filter(Problem.category == category)
+    if sub_category:
+        query = query.filter(Problem.code.startswith(sub_category))
     if search:
         query = query.filter(
             (Problem.title.ilike(f"%{search}%")) |
@@ -58,7 +61,9 @@ async def problem_list(
         solved_ids = {s[0] for s in solved}
 
     # Category info
+    from config import SUB_CATEGORIES
     category_info = CATEGORIES.get(category) if category else None
+    available_subcats = SUB_CATEGORIES.get(category, []) if category else []
 
     return templates.TemplateResponse("problems.html", {
         "request": request,
@@ -69,7 +74,9 @@ async def problem_list(
         "search": search,
         "difficulty": difficulty,
         "category": category,
+        "sub_category": sub_category,
         "category_info": category_info,
+        "available_subcats": available_subcats,
         "solved_ids": solved_ids,
     })
 
@@ -81,6 +88,7 @@ async def category_page(
     page: int = 1,
     search: str = "",
     difficulty: str = "",
+    sub_category: str = "",
     db: Session = Depends(get_db)
 ):
     """Redirect to /problems with category filter."""
@@ -90,6 +98,8 @@ async def category_page(
     user = get_current_user(request, db)
     query = db.query(Problem).filter(Problem.category == slug)
 
+    if sub_category:
+        query = query.filter(Problem.code.startswith(sub_category))
     if search:
         query = query.filter(
             (Problem.title.ilike(f"%{search}%")) |
@@ -113,7 +123,9 @@ async def category_page(
         ).distinct().all()
         solved_ids = {s[0] for s in solved}
 
+    from config import SUB_CATEGORIES
     category_info = CATEGORIES[slug]
+    available_subcats = SUB_CATEGORIES.get(slug, [])
 
     return templates.TemplateResponse("problems.html", {
         "request": request,
@@ -123,8 +135,10 @@ async def category_page(
         "total_pages": total_pages,
         "search": search,
         "difficulty": difficulty,
+        "sub_category": sub_category,
         "category": slug,
         "category_info": category_info,
+        "available_subcats": available_subcats,
         "solved_ids": solved_ids,
     })
 

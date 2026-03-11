@@ -38,6 +38,15 @@
             <input type="text" name="search" value="{{ search }}" placeholder="Tìm theo mã bài hoặc tên..."
                 class="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 outline-none transition">
         </div>
+        {% if available_subcats %}
+        <select name="sub_category"
+            class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 outline-none transition max-w-[200px]">
+            <option value="">Tất cả dạng bài</option>
+            {% for sub in available_subcats %}
+            <option value="{{ sub.prefix }}" {% if sub_category == sub.prefix %}selected{% endif %}>{{ sub.name }}</option>
+            {% endfor %}
+        </select>
+        {% endif %}
         <select name="difficulty"
             class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 outline-none transition">
             <option value="">Tất cả độ khó</option>
