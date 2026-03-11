@@ -22,6 +22,18 @@ def fix_image_paths(content: str) -> str:
     # Pattern to match ![Alt](./img/filename.ext)
     return re.sub(r'!\[(.*?)\]\(\./img/(.*?)\)', r'![\1](/static/img/\2)', content)
 
+def fix_table_newlines(content: str) -> str:
+    """Convert double spaces inside markdown table rows to <br> tags."""
+    def convert_spaces(match):
+        row = match.group(0)
+        # Skip table headers delimiter like |---|---|
+        if re.match(r'^\|[\-\|\s]+\|$', row):
+            return row
+        # Replace 2 or more spaces with <br>
+        return re.sub(r' {2,}', '<br>', row)
+    
+    return re.sub(r'^\|.*\|$', convert_spaces, content, flags=re.MULTILINE)
+
 def parse_readme_for_raw_markdown(filepath: str) -> dict:
     """Extract raw markdown for each problem from a README file."""
     with open(filepath, 'r', encoding='utf-8') as f:
@@ -53,8 +65,9 @@ def parse_readme_for_raw_markdown(filepath: str) -> dict:
 
         # Get raw content
         problem_content = ''.join(lines[start:end]).strip()
-        # Fix images
+        # Fix images and table newlines
         problem_content = fix_image_paths(problem_content)
+        problem_content = fix_table_newlines(problem_content)
         
         if problem_content:
             problems[pos["code"]] = problem_content
@@ -62,6 +75,9 @@ def parse_readme_for_raw_markdown(filepath: str) -> dict:
     return problems
 
 def main():
+    import sys
+    sys.stdout.reconfigure(encoding='utf-8')
+    
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     code_ptit_dir = os.path.join(base_dir, 'Code_PTIT-main', 'Code_PTIT-main')
     
