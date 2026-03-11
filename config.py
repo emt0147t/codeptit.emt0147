@@ -7,10 +7,19 @@ from pathlib import Path
 # Base directory
 BASE_DIR = Path(__file__).resolve().parent
 
-# Database
-# If running on Render with persistent disk mounted to /data, use it to avoid data wipe on restarts
-if os.path.exists("/data"):
+# Database Configuration
+# 1. First priority: Use custom PostgreSQL URI if provided in environment (e.g. Supabase, Render, Neon)
+env_db_url = os.getenv("DATABASE_URL")
+if env_db_url:
+    # SQLAlchemy requires postgresql:// instead of postgres://
+    if env_db_url.startswith("postgres://"):
+        env_db_url = env_db_url.replace("postgres://", "postgresql://", 1)
+    DATABASE_URL = env_db_url
+# 2. Render Free Tier fallback: Persistent disks are currently unsupported on free tier. 
+# Leaving /data logic here as a premium backup.
+elif os.path.exists("/data"):
     DATABASE_URL = "sqlite:////data/online_judge.db"
+# 3. Default: Local SQLite for development
 else:
     DATABASE_URL = f"sqlite:///{BASE_DIR / 'online_judge.db'}"
 

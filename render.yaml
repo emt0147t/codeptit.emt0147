@@ -1,12 +1,9 @@
 services:
   - type: web
-    name: codeptit-online-judge
-    runtime: docker
+    name: codeptitclone
+    env: docker
     plan: free
-    disk:
-      name: data
-      mountPath: /data
-      sizeGB: 1
+    dockerCommand: "uvicorn main:app --host 0.0.0.0 --port 10000"
     envVars:
       - key: SECRET_KEY
         generateValue: true

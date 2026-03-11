@@ -117,21 +117,26 @@ def add_sample_problems():
             time_limit=p_data["time_limit"],
         )
         db.add(problem)
-        db.commit()
-        db.refresh(problem)
+        from sqlalchemy.exc import IntegrityError
+        try:
+            db.commit()
+            db.refresh(problem)
 
-        for tc_data in p_data["testcases"]:
-            tc = TestCase(
-                problem_id=problem.id,
-                input_data=tc_data["input"],
-                expected_output=tc_data["output"],
-                is_sample=tc_data["is_sample"],
-                order=0
-            )
-            db.add(tc)
+            for tc_data in p_data["testcases"]:
+                tc = TestCase(
+                    problem_id=problem.id,
+                    input_data=tc_data["input"],
+                    expected_output=tc_data["output"],
+                    is_sample=tc_data["is_sample"],
+                    order=0
+                )
+                db.add(tc)
 
-        db.commit()
-        print(f"  ✅ {p_data['code']} - {p_data['title']}")
+            db.commit()
+            print(f"  ✅ {p_data['code']} - {p_data['title']}")
+        except IntegrityError:
+            db.rollback()
+            print(f"  ⏭️ {p_data['code']} - Already exists. Skipping.")
 
     db.close()
     print(f"\n✅ Added {len(sample_problems)} sample problems")

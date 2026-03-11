@@ -36,12 +36,18 @@ app.include_router(submissions.router)
 @app.on_event("startup")
 def startup():
     """Initialize database on startup."""
+    import os
     logger.info(f"Starting CodePTITclone, BASE_DIR={BASE_DIR}")
-    db_exists = (BASE_DIR / 'online_judge.db').exists()
-    logger.info(f"DB exists: {db_exists}")
+    
+    # Check if we are using a remote Postgres DB or local SQLite
+    is_sqlite = "sqlite" in os.getenv("DATABASE_URL", "") or not os.getenv("DATABASE_URL")
+    db_exists = (BASE_DIR / 'online_judge.db').exists() if is_sqlite else True
+    
+    logger.info(f"DB exists/remote: {db_exists}")
     init_db()
     
-    if not db_exists:
+    # We still try to populate the initial DB, but if it fails (e.g. duplicate keys on remote), we ignore.
+    if not db_exists or not is_sqlite:
         try:
             logger.info("First run detected. Creating admin and sample problems...")
             import init_db as init_script
