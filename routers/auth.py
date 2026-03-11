@@ -64,6 +64,9 @@ async def login_page(request: Request):
     })
 
 
+import time
+auth_rate_limit = {}
+
 @router.post("/login")
 async def login(
     request: Request,
@@ -71,6 +74,23 @@ async def login(
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
+    # Basic IP Rate Limiting for Login (Max 5 attempts per IP per minute)
+    ip = request.client.host
+    current_time = time.time()
+    
+    if ip not in auth_rate_limit:
+        auth_rate_limit[ip] = {"logins": 0, "login_time": current_time, "registers": 0, "register_time": current_time}
+    
+    if current_time - auth_rate_limit[ip]["login_time"] > 60:
+        auth_rate_limit[ip]["logins"] = 0
+        auth_rate_limit[ip]["login_time"] = current_time
+        
+    if auth_rate_limit[ip]["logins"] >= 5:
+        return templates.TemplateResponse("login.html", {
+            "request": request, "error": "Bạn đăng nhập sai quá nhiều. Vui lòng thử lại sau 1 phút."
+        })
+    auth_rate_limit[ip]["logins"] += 1
+
     user = db.query(User).filter(User.username == username).first()
     if not user:
         return templates.TemplateResponse("login.html", {
@@ -85,6 +105,8 @@ async def login(
             "error": "Sai tên đăng nhập hoặc mật khẩu"
         })
         
+    # Reset count on success
+    auth_rate_limit[ip]["logins"] = 0
     request.session["user_id"] = user.id
     return RedirectResponse(url="/", status_code=302)
 
@@ -105,6 +127,21 @@ async def register(
     password_confirm: str = Form(...),
     db: Session = Depends(get_db)
 ):
+    ip = request.client.host
+    current_time = time.time()
+    if ip not in auth_rate_limit:
+        auth_rate_limit[ip] = {"logins": 0, "login_time": current_time, "registers": 0, "register_time": current_time}
+        
+    if current_time - auth_rate_limit[ip]["register_time"] > 60:
+        auth_rate_limit[ip]["registers"] = 0
+        auth_rate_limit[ip]["register_time"] = current_time
+        
+    if auth_rate_limit[ip]["registers"] >= 3:
+        return templates.TemplateResponse("register.html", {
+            "request": request, "error": "Đăng ký quá nhanh. Vui lòng thử lại sau 1 phút."
+        })
+    auth_rate_limit[ip]["registers"] += 1
+
     # Validate
     if password != password_confirm:
         return templates.TemplateResponse("register.html", {

@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from config import BASE_DIR
 from sqlalchemy.orm import Session
 
+import threading
 from database import get_db, SessionLocal
 from models import Problem, Submission, SubmissionStatus, User
 from routers.auth import get_current_user, require_login
@@ -16,16 +17,22 @@ from config import SUBMISSIONS_PER_PAGE, SUPPORTED_LANGUAGES
 router = APIRouter(tags=["submissions"])
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+# Limit concurrent judging to 2 to prevent CPU 100% and OOM on 1GB RAM servers
+judge_semaphore = threading.Semaphore(2)
 
 def run_judge_async(submission_id: int):
-    """Run judge in background thread."""
-    db = SessionLocal()
-    try:
-        judge = Judge(db)
-        judge.evaluate(submission_id)
-    finally:
-        db.close()
+    """Run judge in background thread with concurrency limit."""
+    with judge_semaphore:
+        db = SessionLocal()
+        try:
+            judge = Judge(db)
+            judge.evaluate(submission_id)
+        finally:
+            db.close()
 
+
+user_last_submit_time = {}
+SUBMIT_COOLDOWN = 10  # seconds
 
 @router.post("/submit")
 async def submit_code(
@@ -37,6 +44,13 @@ async def submit_code(
     db: Session = Depends(get_db)
 ):
     user = require_login(request, db)
+
+    # Rate limiting
+    import time
+    current_time = time.time()
+    if user.id in user_last_submit_time and current_time - user_last_submit_time[user.id] < SUBMIT_COOLDOWN:
+        raise HTTPException(status_code=429, detail="Bạn nộp bài quá nhanh. Vui lòng đợi 10 giây giữa các lần nộp.")
+    user_last_submit_time[user.id] = current_time
 
     # Validate
     problem = db.query(Problem).filter(Problem.id == problem_id).first()
@@ -184,16 +198,28 @@ async def my_submissions(
     })
 
 
+import time
+
+ranking_cache = {"timestamp": 0, "data": []}
+
 @router.get("/ranking")
 async def ranking(
     request: Request,
     db: Session = Depends(get_db)
 ):
     user = get_current_user(request, db)
-    users = db.query(User).order_by(
-        User.solved_count.desc(),
-        User.total_submissions.asc()
-    ).limit(100).all()
+    
+    current_time = time.time()
+    if current_time - ranking_cache["timestamp"] > 60 or not ranking_cache["data"]:
+        # Query DB if cache is older than 60 seconds
+        users = db.query(User).order_by(
+            User.solved_count.desc(),
+            User.total_submissions.asc()
+        ).limit(100).all()
+        ranking_cache["data"] = users
+        ranking_cache["timestamp"] = current_time
+    else:
+        users = ranking_cache["data"]
 
     return templates.TemplateResponse("ranking.html", {
         "request": request,

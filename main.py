@@ -53,37 +53,53 @@ def startup():
     logger.info("Database initialized successfully")
 
 
+import time
+
+home_stats_cache = {"timestamp": 0, "data": {}}
+
 @app.get("/")
 async def home(request: Request, db: Session = Depends(get_db)):
     """Home page with stats and recent problems."""
     from routers.auth import get_current_user
     user = get_current_user(request, db)
 
-    total_problems = db.query(Problem).count()
-    total_submissions = db.query(Submission).count()
-    total_users = db.query(User).count()
+    current_time = time.time()
+    if current_time - home_stats_cache["timestamp"] > 60 or not home_stats_cache["data"]:
+        total_problems = db.query(Problem).count()
+        total_submissions = db.query(Submission).count()
+        total_users = db.query(User).count()
 
-    # Category stats
-    from sqlalchemy import func
-    cat_counts = dict(
-        db.query(Problem.category, func.count(Problem.id))
-        .group_by(Problem.category).all()
-    )
-    categories_with_counts = []
-    for slug, info in CATEGORIES.items():
-        categories_with_counts.append({
-            "slug": slug,
-            **info,
-            "count": cat_counts.get(slug, 0),
-        })
+        # Category stats
+        from sqlalchemy import func
+        cat_counts = dict(
+            db.query(Problem.category, func.count(Problem.id))
+            .group_by(Problem.category).all()
+        )
+        categories_with_counts = []
+        for slug, info in CATEGORIES.items():
+            categories_with_counts.append({
+                "slug": slug,
+                **info,
+                "count": cat_counts.get(slug, 0),
+            })
+            
+        home_stats_cache["data"] = {
+            "total_problems": total_problems,
+            "total_submissions": total_submissions,
+            "total_users": total_users,
+            "categories": categories_with_counts
+        }
+        home_stats_cache["timestamp"] = current_time
+
+    data = home_stats_cache["data"]
 
     return templates.TemplateResponse("index.html", {
         "request": request,
         "user": user,
-        "total_problems": total_problems,
-        "total_submissions": total_submissions,
-        "total_users": total_users,
-        "categories": categories_with_counts,
+        "total_problems": data["total_problems"],
+        "total_submissions": data["total_submissions"],
+        "total_users": data["total_users"],
+        "categories": data["categories"],
     })
 
 
