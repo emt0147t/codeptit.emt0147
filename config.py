@@ -11,9 +11,21 @@ BASE_DIR = Path(__file__).resolve().parent
 # 1. First priority: Use custom PostgreSQL URI if provided in environment (e.g. Supabase, Render, Neon)
 env_db_url = os.getenv("DATABASE_URL")
 if env_db_url:
-    # SQLAlchemy requires postgresql:// instead of postgres://
-    if env_db_url.startswith("postgres://"):
-        env_db_url = env_db_url.replace("postgres://", "postgresql://", 1)
+    parts = env_db_url.split("://", 1)
+    if len(parts) == 2:
+        scheme, remainder = parts
+        scheme = "postgresql" # Force postgresql dialect
+        if "@" in remainder:
+            credentials, rest = remainder.split("@", 1)
+            if ":" in credentials:
+                user, pwd = credentials.split(":", 1)
+                user = user.replace(".", "%2E")  # Fix Supabase pooler username parsing bug
+                env_db_url = f"{scheme}://{user}:{pwd}@{rest}"
+            else:
+                user = credentials.replace(".", "%2E")
+                env_db_url = f"{scheme}://{user}@{rest}"
+        else:
+            env_db_url = f"{scheme}://{remainder}"
     DATABASE_URL = env_db_url
 # 2. Render Free Tier fallback: Persistent disks are currently unsupported on free tier. 
 # Leaving /data logic here as a premium backup.
