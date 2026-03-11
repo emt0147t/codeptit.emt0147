@@ -39,7 +39,7 @@
                 class="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 outline-none transition">
         </div>
         {% if available_subcats %}
-        <select name="sub_category"
+        <select name="sub_category" onchange="this.form.submit()"
             class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 outline-none transition max-w-[200px]">
             <option value="">Tất cả dạng bài</option>
             {% for sub in available_subcats %}
@@ -47,7 +47,7 @@
             {% endfor %}
         </select>
         {% endif %}
-        <select name="difficulty"
+        <select name="difficulty" onchange="this.form.submit()"
             class="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 outline-none transition">
             <option value="">Tất cả độ khó</option>
             <option value="Easy" {% if difficulty=="Easy" %}selected{% endif %}>🟢 Easy</option>
