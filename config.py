@@ -8,7 +8,11 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 
 # Database
-DATABASE_URL = f"sqlite:///{BASE_DIR / 'online_judge.db'}"
+# If running on Render with persistent disk mounted to /data, use it to avoid data wipe on restarts
+if os.path.exists("/data"):
+    DATABASE_URL = "sqlite:////data/online_judge.db"
+else:
+    DATABASE_URL = f"sqlite:///{BASE_DIR / 'online_judge.db'}"
 
 # Secret key for session
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production-2024")
