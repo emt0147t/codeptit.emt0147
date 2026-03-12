@@ -14,28 +14,33 @@ def hash_password(password: str) -> str:
     return _bcrypt.hashpw(password.encode('utf-8'), _bcrypt.gensalt()).decode('utf-8')
 
 
-def create_admin():
-    """Create default admin user."""
+def create_admins():
+    """Create or update admin accounts."""
     db = SessionLocal()
+    
+    admins_to_create = [
+        {"username": "admin", "email": "admin@onlinejudge.local", "password": "admin123"},
+        {"username": "anhdang", "email": "anhdang@example.com", "password": "123456"},
+        {"username": "anhdang1", "email": "anhdang1@example.com", "password": "123456"},
+    ]
 
-    existing = db.query(User).filter(User.username == "admin").first()
-    if existing:
-        print("Admin account already exists.")
-        db.close()
-        return
-
-    admin = User(
-        username="admin",
-        email="admin@onlinejudge.local",
-        password_hash=hash_password("admin123"),
-        is_admin=True
-    )
-    db.add(admin)
-    db.commit()
-    print("✅ Admin account created!")
-    print("   Username: admin")
-    print("   Password: admin123")
-    print("   (Hãy đổi mật khẩu sau khi đăng nhập)")
+    for data in admins_to_create:
+        existing = db.query(User).filter(User.username == data["username"]).first()
+        if existing:
+            print(f"User {data['username']} already exists. Ensuring admin status.")
+            existing.is_admin = True
+            db.commit()
+        else:
+            admin = User(
+                username=data["username"],
+                email=data["email"],
+                password_hash=hash_password(data["password"]),
+                is_admin=True
+            )
+            db.add(admin)
+            db.commit()
+            print(f"✅ Admin account created: {data['username']}")
+    
     db.close()
 
 
@@ -147,8 +152,8 @@ if __name__ == "__main__":
     init_db()
     print("✅ Database tables created\n")
 
-    print("👤 Creating admin account...")
-    create_admin()
+    print("👤 Creating admin accounts...")
+    create_admins()
 
     print("\n📋 Adding sample problems...")
     add_sample_problems()

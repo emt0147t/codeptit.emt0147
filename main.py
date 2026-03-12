@@ -46,15 +46,21 @@ def startup():
     logger.info(f"DB exists/remote: {db_exists}")
     init_db()
     
-    # We still try to populate the initial DB, but if it fails (e.g. duplicate keys on remote), we ignore.
+    # Always ensure admin accounts are up to date
+    try:
+        import init_db as init_script
+        init_script.create_admins()
+    except Exception as e:
+        logger.error(f"Failed to ensure admin accounts: {e}")
+
+    # Check if we need to add sample problems (only on first run or remote)
     if not db_exists or not is_sqlite:
         try:
-            logger.info("First run detected. Creating admin and sample problems...")
+            logger.info("Initializing sample problems...")
             import init_db as init_script
-            init_script.create_admin()
             init_script.add_sample_problems()
         except Exception as e:
-            logger.error(f"Failed to initialize default data: {e}")
+            logger.error(f"Failed to initialize sample problems: {e}")
             
     logger.info("Database initialized successfully")
 
