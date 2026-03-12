@@ -267,6 +267,9 @@
                     <span class="text-sm text-gray-500">Xin chào, <strong class="text-gray-800">{{ user.username
                             }}</strong></span>
                     {% if user.is_admin %}
+                    <a href="/problems"
+                        class="text-xs font-semibold text-gray-600 hover:text-brand-600 px-3 py-1.5 transition">
+                        Quản lý bài tập</a>
                     <a href="/admin/problems/add"
                         class="text-xs font-semibold bg-brand-50 text-brand-600 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition">+
                         Thêm bài</a>
