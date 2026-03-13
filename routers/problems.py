@@ -319,6 +319,11 @@ async def delete_testcase(
         raise HTTPException(status_code=404, detail="TestCase not found")
 
     problem_code = tc.problem.code
+    
+    # Delete associated results first to avoid FK constraint error
+    from models import SubmissionResult
+    db.query(SubmissionResult).filter(SubmissionResult.testcase_id == testcase_id).delete()
+    
     db.delete(tc)
     db.commit()
 
@@ -423,14 +428,20 @@ async def delete_all_testcases(
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
 
-    deleted = db.query(TestCase).filter(
+    testcases_to_delete = db.query(TestCase.id).filter(
         TestCase.problem_id == problem.id,
         TestCase.is_sample == False
-    ).delete()
-    db.commit()
+    ).all()
+    testcase_ids = [tc[0] for tc in testcases_to_delete]
+
+    if testcase_ids:
+        from models import SubmissionResult
+        db.query(SubmissionResult).filter(SubmissionResult.testcase_id.in_(testcase_ids)).delete(synchronize_session=False)
+        db.query(TestCase).filter(TestCase.id.in_(testcase_ids)).delete(synchronize_session=False)
+        db.commit()
 
     return RedirectResponse(
-        url=f"/admin/problem/{problem_code}/testcases?msg=Deleted+{deleted}+hidden+test+cases",
+        url=f"/admin/problem/{problem_code}/testcases?msg=Deleted+hidden+test+cases",
         status_code=302
     )
 

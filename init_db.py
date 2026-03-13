@@ -21,7 +21,6 @@ def create_admins():
     admins_to_create = [
         {"username": "admin", "email": "admin@onlinejudge.local", "password": "admin123"},
         {"username": "anhdang", "email": "anhdang@example.com", "password": "123456"},
-        {"username": "anhdang1", "email": "anhdang1@example.com", "password": "123456"},
     ]
 
     for data in admins_to_create:
