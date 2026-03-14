@@ -555,3 +555,43 @@ async def ai_generate_testcases(
         url=f"/admin/problem/{problem_code}/testcases?msg={quote(msg)}",
         status_code=302
     )
+
+@router.get("/admin/testcase/{testcase_id}/edit")
+async def edit_testcase_page(
+    request: Request,
+    testcase_id: int,
+    db: Session = Depends(get_db)
+):
+    user = require_admin(request, db)
+    tc = db.query(TestCase).filter(TestCase.id == testcase_id).first()
+    if not tc:
+        raise HTTPException(status_code=404, detail="TestCase not found")
+    
+    return templates.TemplateResponse("admin/edit_testcase.html", {
+        "request": request,
+        "user": user,
+        "testcase": tc,
+        "problem": tc.problem
+    })
+
+@router.post("/admin/testcase/{testcase_id}/edit")
+async def update_testcase(
+    request: Request,
+    testcase_id: int,
+    db: Session = Depends(get_db)
+):
+    user = require_admin(request, db)
+    tc = db.query(TestCase).filter(TestCase.id == testcase_id).first()
+    if not tc:
+        raise HTTPException(status_code=404, detail="TestCase not found")
+    
+    form_data = await request.form()
+    tc.input_data = form_data.get("input_data")
+    tc.expected_output = form_data.get("expected_output")
+    tc.is_sample = form_data.get("is_sample") == "true"
+    
+    db.commit()
+    
+    return RedirectResponse(
+        url=f"/admin/problem/{tc.problem.code}/testcases?msg=Testcase+updated", status_code=303
+    )
