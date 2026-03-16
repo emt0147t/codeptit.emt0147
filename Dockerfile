@@ -1,21 +1,26 @@
-FROM python:3.11-slim
+# Use official Python 3.9 image
+FROM python:3.9-slim
 
-# Install gcc/g++ for C/C++ judge
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc g++ && \
-    rm -rf /var/lib/apt/lists/*
+# Install system dependencies for the judge engine (g++, gcc, etc.)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    g++ \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 
+# Set working directory
 WORKDIR /app
 
-# Install Python dependencies
+# Copy requirements and install
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application
+# Copy the rest of the application
 COPY . .
 
-# Expose port (Render overrides this with PORT env var)
-EXPOSE 10000
+# Expose the port (FastAPI default)
+EXPOSE 8000
 
-# Run using shell so environment variables are evaluated
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-10000}"]
+# Command to run the application
+# We use uvicorn with host 0.0.0.0 to make it accessible inside the container
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
