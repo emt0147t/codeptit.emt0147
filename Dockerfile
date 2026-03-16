@@ -18,9 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application
 COPY . .
 
-# Expose the port (FastAPI default)
-EXPOSE 8000
+# Expose the port (Hugging Face Spaces expects 7860)
+EXPOSE 7860
 
 # Command to run the application
-# We use uvicorn with host 0.0.0.0 to make it accessible inside the container
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
