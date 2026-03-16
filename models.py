@@ -106,8 +106,8 @@ class SubmissionResult(Base):
     __tablename__ = "submission_results"
 
     id = Column(Integer, primary_key=True, index=True)
-    submission_id = Column(Integer, ForeignKey("submissions.id"), nullable=False)
-    testcase_id = Column(Integer, ForeignKey("testcases.id"), nullable=False)
+    submission_id = Column(Integer, ForeignKey("submissions.id"), nullable=False, index=True)
+    testcase_id = Column(Integer, ForeignKey("testcases.id"), nullable=False, index=True)
     status = Column(String(30), default=SubmissionStatus.PENDING)
     time_ms = Column(Float, default=0.0)
     memory_kb = Column(Float, default=0.0)

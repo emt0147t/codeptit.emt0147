@@ -13,6 +13,7 @@ from models import Problem, Submission, SubmissionStatus, User
 from routers.auth import get_current_user, require_login
 from judge.executor import Judge
 from config import SUBMISSIONS_PER_PAGE, SUPPORTED_LANGUAGES
+from sqlalchemy.orm import joinedload
 
 router = APIRouter(tags=["submissions"])
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -96,7 +97,11 @@ async def submission_detail(
     db: Session = Depends(get_db)
 ):
     user = get_current_user(request, db)
-    submission = db.query(Submission).filter(Submission.id == submission_id).first()
+    submission = db.query(Submission).options(
+        joinedload(Submission.user),
+        joinedload(Submission.problem),
+        joinedload(Submission.results)
+    ).filter(Submission.id == submission_id).first()
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
 
@@ -147,7 +152,10 @@ async def submission_list(
     db: Session = Depends(get_db)
 ):
     user = get_current_user(request, db)
-    query = db.query(Submission)
+    query = db.query(Submission).options(
+        joinedload(Submission.user),
+        joinedload(Submission.problem)
+    )
 
     if problem_code:
         problem = db.query(Problem).filter(Problem.code == problem_code).first()
@@ -179,7 +187,10 @@ async def my_submissions(
 ):
     user = require_login(request, db)
 
-    query = db.query(Submission).filter(Submission.user_id == user.id)
+    query = db.query(Submission).options(
+        joinedload(Submission.user),
+        joinedload(Submission.problem)
+    ).filter(Submission.user_id == user.id)
     total = query.count()
     submissions = query.order_by(Submission.created_at.desc()).offset(
         (page - 1) * SUBMISSIONS_PER_PAGE

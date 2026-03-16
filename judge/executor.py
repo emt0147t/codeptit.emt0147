@@ -8,6 +8,7 @@ import tempfile
 import shutil
 import time
 import platform
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from sqlalchemy.orm import Session
 
@@ -96,18 +97,46 @@ class Judge:
         else:
             run_cmd = lang_config["run_cmd"].format(source=source_file)
 
-        # Run against each test case
+        # Run against each test case in parallel
         total_tests = len(testcases)
+        results_list = [None] * total_tests
+        
+        time_limit = problem.time_limit if problem.time_limit else JUDGE_TIMEOUT
+        
+        # Use ThreadPoolExecutor to run testcases in parallel
+        # We limit workers to avoid overloading small server CPUs
+        max_workers = 4 
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Create a list of future tasks
+            future_to_tc = {
+                executor.submit(self._run_testcase, run_cmd, tc, time_limit, tmp_dir): i 
+                for i, tc in enumerate(testcases)
+            }
+            
+            from concurrent.futures import as_completed
+            for future in as_completed(future_to_tc):
+                index = future_to_tc[future]
+                try:
+                    tc_result = future.result()
+                    results_list[index] = tc_result
+                except Exception as e:
+                    results_list[index] = {
+                        "status": SubmissionStatus.RUNTIME_ERROR,
+                        "time_ms": 0,
+                        "memory_kb": 0,
+                        "output": f"Judge thread error: {str(e)}",
+                    }
+
+        # Processes collected results
         passed = 0
         max_time = 0
         max_memory = 0
         overall_status = SubmissionStatus.ACCEPTED
-        time_limit = problem.time_limit if problem.time_limit else JUDGE_TIMEOUT
 
-        for tc in testcases:
-            tc_result = self._run_testcase(run_cmd, tc, time_limit, tmp_dir)
-
-            # Save result
+        for i, tc in enumerate(testcases):
+            tc_result = results_list[i]
+            
+            # Save result to DB
             sub_result = SubmissionResult(
                 submission_id=submission.id,
                 testcase_id=tc.id,
