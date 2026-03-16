@@ -1,30 +1,21 @@
-# Use official Python 3.9 image
-FROM python:3.9-slim
+FROM python:3.11-slim
 
-# Install system dependencies for the judge engine (g++, gcc, etc.)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    g++ \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+# Install gcc/g++ for C/C++ judge
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc g++ && \
+    rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user for Hugging Face (UID 1000)
-RUN useradd -m -u 1000 user
-USER user
-ENV PATH="/home/user/.local/bin:${PATH}"
+WORKDIR /app
 
-# Set working directory
-WORKDIR /home/user/app
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy requirements and install
-COPY --chown=user requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+# Copy application
+COPY . .
 
-# Copy the rest of the application with correct ownership
-COPY --chown=user . .
+# Expose port (Render overrides this with PORT env var)
+EXPOSE 10000
 
-# Expose the port (Hugging Face Spaces expects 7860)
-EXPOSE 7860
-
-# Command to run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Run using shell so environment variables are evaluated
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-10000}"]

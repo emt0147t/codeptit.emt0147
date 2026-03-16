@@ -1,12 +1,3 @@
----
-title: CodePTITclone
-emoji: 🚀
-colorFrom: red
-colorTo: indigo
-sdk: docker
-pinned: false
----
-
 # Online Judge System
 
 Hệ thống chấm bài tự động (Online Judge) cho luyện tập lập trình.
