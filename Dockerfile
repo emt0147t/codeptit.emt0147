@@ -8,15 +8,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
+# Create a non-root user for Hugging Face (UID 1000)
+RUN useradd -m -u 1000 user
+USER user
+ENV PATH="/home/user/.local/bin:${PATH}"
+
 # Set working directory
-WORKDIR /app
+WORKDIR /home/user/app
 
 # Copy requirements and install
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY --chown=user requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
 
-# Copy the rest of the application
-COPY . .
+# Copy the rest of the application with correct ownership
+COPY --chown=user . .
 
 # Expose the port (Hugging Face Spaces expects 7860)
 EXPOSE 7860
