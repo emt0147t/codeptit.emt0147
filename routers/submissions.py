@@ -32,8 +32,6 @@ def run_judge_async(submission_id: int):
             db.close()
 
 
-user_last_submit_time = {}
-SUBMIT_COOLDOWN = 10  # seconds
 
 @router.post("/submit")
 async def submit_code(
@@ -45,13 +43,6 @@ async def submit_code(
     db: Session = Depends(get_db)
 ):
     user = require_login(request, db)
-
-    # Rate limiting
-    import time
-    current_time = time.time()
-    if user.id in user_last_submit_time and current_time - user_last_submit_time[user.id] < SUBMIT_COOLDOWN:
-        raise HTTPException(status_code=429, detail="Bạn nộp bài quá nhanh. Vui lòng đợi 10 giây giữa các lần nộp.")
-    user_last_submit_time[user.id] = current_time
 
     # Validate
     problem = db.query(Problem).filter(Problem.id == problem_id).first()

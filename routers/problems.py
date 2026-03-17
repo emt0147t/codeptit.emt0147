@@ -22,13 +22,18 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 @router.get("/problems")
 async def problem_list(
     request: Request,
-    page: int = 1,
+    page: Optional[int] = None,
     search: str = "",
     difficulty: str = "",
     category: str = "",
     sub_category: str = "",
     db: Session = Depends(get_db)
 ):
+    # Handle pagination persistence via cookie
+    if page is None:
+        cookie_page = request.cookies.get("last_problems_page")
+        page = int(cookie_page) if cookie_page and cookie_page.isdigit() else 1
+    
     user = get_current_user(request, db)
     query = db.query(Problem)
 
@@ -65,7 +70,7 @@ async def problem_list(
     category_info = CATEGORIES.get(category) if category else None
     available_subcats = SUB_CATEGORIES.get(category, []) if category else []
 
-    return templates.TemplateResponse("problems.html", {
+    response = templates.TemplateResponse("problems.html", {
         "request": request,
         "user": user,
         "problems": problems,
@@ -79,18 +84,25 @@ async def problem_list(
         "available_subcats": available_subcats,
         "solved_ids": solved_ids,
     })
+    response.set_cookie(key="last_problems_page", value=str(page), max_age=3600*24*7) # 1 week
+    return response
 
 
 @router.get("/category/{slug}")
 async def category_page(
     request: Request,
     slug: str,
-    page: int = 1,
+    page: Optional[int] = None,
     search: str = "",
     difficulty: str = "",
     sub_category: str = "",
     db: Session = Depends(get_db)
 ):
+    # Handle pagination persistence via cookie
+    cookie_name = f"last_page_{slug}"
+    if page is None:
+        cookie_page = request.cookies.get(cookie_name)
+        page = int(cookie_page) if cookie_page and cookie_page.isdigit() else 1
     """Redirect to /problems with category filter."""
     if slug not in CATEGORIES:
         raise HTTPException(status_code=404, detail="Category not found")
@@ -127,7 +139,7 @@ async def category_page(
     category_info = CATEGORIES[slug]
     available_subcats = SUB_CATEGORIES.get(slug, [])
 
-    return templates.TemplateResponse("problems.html", {
+    response = templates.TemplateResponse("problems.html", {
         "request": request,
         "user": user,
         "problems": problems,
@@ -141,6 +153,8 @@ async def category_page(
         "available_subcats": available_subcats,
         "solved_ids": solved_ids,
     })
+    response.set_cookie(key=cookie_name, value=str(page), max_age=3600*24*7)
+    return response
 
 
 @router.get("/problem/{problem_code}")
