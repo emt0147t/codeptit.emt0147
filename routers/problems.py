@@ -147,6 +147,7 @@ async def category_page(
 async def problem_detail(
     request: Request,
     problem_code: str,
+    page: int = 1,
     db: Session = Depends(get_db)
 ):
     user = get_current_user(request, db)
@@ -177,6 +178,7 @@ async def problem_detail(
         "sample_testcases": sample_testcases,
         "user_submissions": user_submissions,
         "is_solved": is_solved,
+        "page": page,
     })
 
 
