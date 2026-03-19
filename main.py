@@ -33,27 +33,6 @@ app.include_router(problems.router)
 app.include_router(submissions.router)
 
 
-@app.get("/debug-db")
-def debug_db():
-    """Diagnose DB connection issues - temporary."""
-    import traceback
-    from config import DATABASE_URL as cfg_url
-    result = {"config_url_start": cfg_url[:30] + "..." if cfg_url else "None"}
-    try:
-        from database import engine
-        from sqlalchemy import text
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-        result["status"] = "OK"
-        result["host"] = str(engine.url.host)
-        result["port"] = engine.url.port
-        result["database"] = str(engine.url.database)
-    except Exception as e:
-        result["status"] = "ERROR"
-        result["error"] = f"{type(e).__name__}: {e}"
-        result["traceback"] = traceback.format_exc()[-500:]
-    return result
-
 
 @app.on_event("startup")
 def startup():
