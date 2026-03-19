@@ -38,8 +38,16 @@ def debug_db(db: Session = Depends(get_db)):
     """Diagnose DB connection issues."""
     try:
         from sqlalchemy import text
+        from database import engine
         db.execute(text("SELECT 1"))
-        return {"status": "success", "message": "Database is connected!"}
+        # Get host from engine URL
+        db_host = engine.url.host
+        return {
+            "status": "success", 
+            "message": "Database is connected!",
+            "host": db_host,
+            "port": engine.url.port
+        }
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
