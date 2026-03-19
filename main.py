@@ -40,16 +40,18 @@ def debug_db(db: Session = Depends(get_db)):
         from sqlalchemy import text
         from database import engine
         db.execute(text("SELECT 1"))
-        # Get host from engine URL
+        # Get info from engine URL
         db_host = engine.url.host
+        db_name = engine.url.database
         return {
             "status": "success", 
             "message": "Database is connected!",
             "host": db_host,
+            "database": db_name,
             "port": engine.url.port
         }
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": f"{type(e).__name__}: {str(e)}"}
 
 
 @app.on_event("startup")
