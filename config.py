@@ -13,26 +13,24 @@ import urllib.parse
 env_db_url = os.getenv("DATABASE_URL")
 
 if env_db_url:
-    print(f"[CONFIG] Found DATABASE_URL: {env_db_url[:20]}...")
-    # Render and Supabase often use postgres://, but SQLAlchemy 1.4+ requires postgresql://
+    # Render/Supabase use postgres://, SQLAlchemy requires postgresql://
     if env_db_url.startswith("postgres://"):
         env_db_url = env_db_url.replace("postgres://", "postgresql://", 1)
     
-    # Supabase Pooler Fix: Replace "." in username with "%2E" if using the pooler
+    # Supabase Pooler Fix: username encoding
     if "@aws-" in env_db_url or "@db." in env_db_url:
         try:
-            parsed = urllib.parse.urlparse(env_db_url)
-            if parsed.username and "." in parsed.username:
-                new_username = parsed.username.replace(".", "%2E")
-                # Reconstruct netloc with encoded username
-                netloc = f"{new_username}:{parsed.password}@{parsed.hostname}"
-                if parsed.port:
-                    netloc += f":{parsed.port}"
-                parsed = parsed._replace(netloc=netloc)
-                env_db_url = urllib.parse.urlunparse(parsed)
-                print("[CONFIG] Applied Supabase Pooler username patch.")
-        except Exception as e:
-            print(f"[CONFIG] Warning: Pooler patch failed: {e}")
+            # Simple replacement for the dot in the user part
+            scheme_parts = env_db_url.split("://", 1)
+            cred_parts = scheme_parts[1].split("@", 1)
+            user_parts = cred_parts[0].split(":", 1)
+            if "." in user_parts[0]:
+                user_parts[0] = user_parts[0].replace(".", "%2E")
+                new_creds = ":".join(user_parts)
+                env_db_url = f"{scheme_parts[0]}://{new_creds}@{cred_parts[1]}"
+                print("[CONFIG] Applied dot-in-username patch.")
+        except:
+            pass
     
     DATABASE_URL = env_db_url
 else:
