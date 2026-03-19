@@ -17,18 +17,20 @@ if env_db_url:
     if env_db_url.startswith("postgres://"):
         env_db_url = env_db_url.replace("postgres://", "postgresql://", 1)
     
-    # Minimal Supabase Pooler Patch: only if needed
-    if "pooler.supabase.com" in env_db_url and "." in env_db_url.split("@")[0]:
-        try:
-            # We only escape the first dot in the username
-            prefix, rest = env_db_url.split("@", 1)
-            scheme, creds = prefix.split("://", 1)
-            if "." in creds:
-                creds = creds.replace(".", "%2E", 1) # Only first dot
-            env_db_url = f"{scheme}://{creds}@{rest}"
-        except:
-            pass
+    # Supabase Direct Connection Fix (Bypass Pooler if it crashes)
+    if "pooler.supabase.com" in env_db_url:
+        # Transform pooler URL to direct URL
+        # from: postgresql://user:pass@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres
+        # to:   postgresql://user:pass@db.isbbxkdjdnrggezwdkbz.supabase.co:5432/postgres
+        env_db_url = env_db_url.replace("aws-1-ap-northeast-1.pooler.supabase.com:6543", "db.isbbxkdjdnrggezwdkbz.supabase.co:5432")
+        print("[CONFIG] Switched to Direct Supabase connection.")
     
+    # Increase connection timeout for stability
+    if "?" not in env_db_url:
+        env_db_url += "?connect_timeout=30"
+    else:
+        env_db_url += "&connect_timeout=30"
+        
     DATABASE_URL = env_db_url
 else:
     # 2. Render Free Tier fallback
