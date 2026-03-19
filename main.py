@@ -43,25 +43,23 @@ def debug_db(db: Session = Depends(get_db)):
         # Get info from engine URL
         db_host = engine.url.host
         db_name = engine.url.database
-        from config import DATABASE_URL as DB_STR
-        masked_url = DB_STR[:15] + "..." + DB_STR[-15:] if DB_STR else "None"
+        db_user = engine.url.username
         return {
             "status": "success", 
             "message": "Database is connected!",
             "host": db_host,
             "database": db_name,
-            "port": engine.url.port,
-            "url_masked": masked_url
+            "user": db_user,
+            "port": engine.url.port
         }
     except Exception as e:
-        from config import DATABASE_URL as DB_STR
-        masked_url = DB_STR[:15] + "..." + DB_STR[-15:] if DB_STR else "None"
         return {
             "status": "error", 
             "error_type": type(e).__name__,
-            "message": str(e),
-            "url_masked": masked_url
+            "message": str(e)
         }
+    finally:
+        db.close()
 
 
 @app.on_event("startup")
