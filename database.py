@@ -7,18 +7,20 @@ from config import DATABASE_URL
 
 is_sqlite = DATABASE_URL.startswith("sqlite")
 
-from sqlalchemy.pool import NullPool
-
 if is_sqlite:
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 else:
-    # Use NullPool for Supabase/Render to avoid "SSL connection closed"
-    # every request gets a new connection, and we verify it with pre_ping
+    # Production PostgreSQL (Supabase)
+    # Use pool_pre_ping to detect stale connections
+    # Use pool_recycle to close connections after 5 minutes
+    # Use a small pool to avoid connection limits
     engine = create_engine(
         DATABASE_URL,
-        poolclass=NullPool,
+        pool_size=2,
+        max_overflow=3,
         pool_pre_ping=True,
-        connect_args={"sslmode": "require"}
+        pool_recycle=300,
+        connect_args={"sslmode": "require", "connect_timeout": 10}
     )
 
 @event.listens_for(engine, "connect")
