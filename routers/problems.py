@@ -82,7 +82,6 @@ async def problem_list(
         "available_subcats": available_subcats,
         "solved_ids": solved_ids,
     })
-    })
     return response
 
 
@@ -147,7 +146,6 @@ async def category_page(
         "category_info": category_info,
         "available_subcats": available_subcats,
         "solved_ids": solved_ids,
-    })
     })
     return response
 
