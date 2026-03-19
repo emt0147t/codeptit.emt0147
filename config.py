@@ -14,6 +14,20 @@ if env_db_url:
     # Render/Supabase use postgres://, SQLAlchemy requires postgresql://
     if env_db_url.startswith("postgres://"):
         env_db_url = env_db_url.replace("postgres://", "postgresql://", 1)
+    
+    # Auto-fix: Direct Supabase URL (port 5432) doesn't work from Render
+    # Convert to Pooler URL (port 6543) automatically
+    if "supabase.co:5432" in env_db_url:
+        # Extract project ref from db.XXXXX.supabase.co
+        import re
+        match = re.search(r'db\.([a-z0-9]+)\.supabase\.co', env_db_url)
+        if match:
+            project_ref = match.group(1)
+            env_db_url = env_db_url.replace(
+                f"db.{project_ref}.supabase.co:5432",
+                f"aws-1-ap-northeast-1.pooler.supabase.com:6543"
+            )
+    
     DATABASE_URL = env_db_url
 else:
     # 2. Render Free Tier fallback
