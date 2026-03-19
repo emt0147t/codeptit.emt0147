@@ -17,18 +17,15 @@ if env_db_url:
     if env_db_url.startswith("postgres://"):
         env_db_url = env_db_url.replace("postgres://", "postgresql://", 1)
     
-    # Supabase Pooler Fix: username encoding
-    if "@aws-" in env_db_url or "@db." in env_db_url:
+    # Minimal Supabase Pooler Patch: only if needed
+    if "pooler.supabase.com" in env_db_url and "." in env_db_url.split("@")[0]:
         try:
-            # Simple replacement for the dot in the user part
-            scheme_parts = env_db_url.split("://", 1)
-            cred_parts = scheme_parts[1].split("@", 1)
-            user_parts = cred_parts[0].split(":", 1)
-            if "." in user_parts[0]:
-                user_parts[0] = user_parts[0].replace(".", "%2E")
-                new_creds = ":".join(user_parts)
-                env_db_url = f"{scheme_parts[0]}://{new_creds}@{cred_parts[1]}"
-                print("[CONFIG] Applied dot-in-username patch.")
+            # We only escape the first dot in the username
+            prefix, rest = env_db_url.split("@", 1)
+            scheme, creds = prefix.split("://", 1)
+            if "." in creds:
+                creds = creds.replace(".", "%2E", 1) # Only first dot
+            env_db_url = f"{scheme}://{creds}@{rest}"
         except:
             pass
     
