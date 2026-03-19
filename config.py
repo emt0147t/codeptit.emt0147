@@ -17,15 +17,7 @@ if env_db_url:
     if env_db_url.startswith("postgres://"):
         env_db_url = env_db_url.replace("postgres://", "postgresql://", 1)
     
-    # Supabase Direct Connection Fix (Bypass Pooler if it crashes)
-    if "pooler.supabase.com" in env_db_url:
-        # Transform pooler URL to direct URL
-        # from: postgresql://user:pass@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres
-        # to:   postgresql://user:pass@db.isbbxkdjdnrggezwdkbz.supabase.co:5432/postgres
-        env_db_url = env_db_url.replace("aws-1-ap-northeast-1.pooler.supabase.com:6543", "db.isbbxkdjdnrggezwdkbz.supabase.co:5432")
-        print("[CONFIG] Switched to Direct Supabase connection.")
-    
-    # Increase connection timeout for stability
+    # Simple timeout additions
     if "?" not in env_db_url:
         env_db_url += "?connect_timeout=30"
     else:
