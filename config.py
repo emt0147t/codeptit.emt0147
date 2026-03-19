@@ -10,21 +10,9 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # Database Configuration
 # 1. First priority: Use custom PostgreSQL URI if provided in environment (e.g. Supabase, Render, Neon)
-try:
-    # Attempt to parse DATABASE_URL from environment, handling potential malformed URLs
-    env_db_url = os.getenv("DATABASE_URL")
-    if env_db_url:
-        # Validate the URL by parsing it
-        parsed_url = urlparse(env_db_url)
-        if all([parsed_url.scheme, parsed_url.netloc]):
-            DATABASE_URL = env_db_url
-        else:
-            raise ValueError(f"Malformed DATABASE_URL: {env_db_url}")
-    else:
-        # If DATABASE_URL is not set in env, proceed to next fallback
-        raise ValueError("DATABASE_URL environment variable not set.")
 except Exception as e:
-    print(f"Error parsing DATABASE_URL from environment: {e}")
+    print(f"Error parsing DATABASE_URL: {e}")
+    DATABASE_URL = os.getenv("DATABASE_URL")
     # Fallback to other options if parsing fails or env var is not set
     # 2. Render Free Tier fallback: Persistent disks are currently unsupported on free tier. 
     # Leaving /data logic here as a premium backup.
