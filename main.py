@@ -41,27 +41,9 @@ def startup():
     
     # Check if we are using a remote Postgres DB or local SQLite
     is_sqlite = "sqlite" in os.getenv("DATABASE_URL", "") or not os.getenv("DATABASE_URL")
-    db_exists = (BASE_DIR / 'online_judge.db').exists() if is_sqlite else True
     
-    logger.info(f"DB exists/remote: {db_exists}")
+    logger.info(f"Initializing DB...")
     init_db()
-    
-    # Always ensure admin accounts are up to date
-    try:
-        import init_db as init_script
-        init_script.create_admins()
-    except Exception as e:
-        logger.error(f"Failed to ensure admin accounts: {e}")
-
-    # Check if we need to add sample problems (only on first run or remote)
-    if not db_exists or not is_sqlite:
-        try:
-            logger.info("Initializing sample problems...")
-            import init_db as init_script
-            init_script.add_sample_problems()
-        except Exception as e:
-            logger.error(f"Failed to initialize sample problems: {e}")
-            
     logger.info("Database initialized successfully")
 
 

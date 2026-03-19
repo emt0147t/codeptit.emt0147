@@ -29,10 +29,8 @@ async def problem_list(
     sub_category: str = "",
     db: Session = Depends(get_db)
 ):
-    # Handle pagination persistence via cookie
     if page is None:
-        cookie_page = request.cookies.get("last_problems_page")
-        page = int(cookie_page) if cookie_page and cookie_page.isdigit() else 1
+        page = 1
     
     user = get_current_user(request, db)
     query = db.query(Problem)
@@ -84,7 +82,7 @@ async def problem_list(
         "available_subcats": available_subcats,
         "solved_ids": solved_ids,
     })
-    response.set_cookie(key="last_problems_page", value=str(page), max_age=3600*24*7) # 1 week
+    })
     return response
 
 
@@ -98,11 +96,8 @@ async def category_page(
     sub_category: str = "",
     db: Session = Depends(get_db)
 ):
-    # Handle pagination persistence via cookie
-    cookie_name = f"last_page_{slug}"
     if page is None:
-        cookie_page = request.cookies.get(cookie_name)
-        page = int(cookie_page) if cookie_page and cookie_page.isdigit() else 1
+        page = 1
     """Redirect to /problems with category filter."""
     if slug not in CATEGORIES:
         raise HTTPException(status_code=404, detail="Category not found")
@@ -153,7 +148,7 @@ async def category_page(
         "available_subcats": available_subcats,
         "solved_ids": solved_ids,
     })
-    response.set_cookie(key=cookie_name, value=str(page), max_age=3600*24*7)
+    })
     return response
 
 
