@@ -3,17 +3,15 @@ Configuration for the Online Judge system.
 """
 import os
 from pathlib import Path
-from urllib.parse import urlparse
 
 # Base directory
 BASE_DIR = Path(__file__).resolve().parent
 
 # Database Configuration
 # 1. First priority: Use custom PostgreSQL URI if provided in environment (e.g. Supabase, Render, Neon)
-except Exception as e:
-    print(f"Error parsing DATABASE_URL: {e}")
-    DATABASE_URL = os.getenv("DATABASE_URL")
-    # Fallback to other options if parsing fails or env var is not set
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
     # 2. Render Free Tier fallback: Persistent disks are currently unsupported on free tier. 
     # Leaving /data logic here as a premium backup.
     if os.path.exists("/data"):
@@ -21,7 +19,6 @@ except Exception as e:
     # 3. Default: Local SQLite for development
     else:
         DATABASE_URL = f"sqlite:///{BASE_DIR / 'online_judge.db'}"
-
 
 # Secret key for session
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production-2024")
@@ -90,7 +87,7 @@ CATEGORIES = {
     "lap-trinh-voi-python": {
         "name": "Lập trình với Python",
         "short": "Python",
-        "icon": '<svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>',
+        "icon": '<svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z"/></svg>',
         "color": "yellow",
         "description": "Lập trình Python từ cơ bản đến nâng cao",
     },
