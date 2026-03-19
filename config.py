@@ -7,11 +7,13 @@ from pathlib import Path
 # Base directory
 BASE_DIR = Path(__file__).resolve().parent
 
+import urllib.parse
+
 # Database Configuration
-# 1. First priority: Use custom PostgreSQL URI if provided in environment
 env_db_url = os.getenv("DATABASE_URL")
 
 if env_db_url:
+    print(f"[CONFIG] Found DATABASE_URL: {env_db_url[:20]}...")
     # Render and Supabase often use postgres://, but SQLAlchemy 1.4+ requires postgresql://
     if env_db_url.startswith("postgres://"):
         env_db_url = env_db_url.replace("postgres://", "postgresql://", 1)
@@ -19,15 +21,18 @@ if env_db_url:
     # Supabase Pooler Fix: Replace "." in username with "%2E" if using the pooler
     if "@aws-" in env_db_url or "@db." in env_db_url:
         try:
-            parts = env_db_url.split("://", 1)
-            scheme, remainder = parts
-            credentials, rest = remainder.split("@", 1)
-            if ":" in credentials:
-                user, pwd = credentials.split(":", 1)
-                user = user.replace(".", "%2E")
-                env_db_url = f"{scheme}://{user}:{pwd}@{rest}"
-        except:
-            pass # Fallback to raw URL if parsing fails
+            parsed = urllib.parse.urlparse(env_db_url)
+            if parsed.username and "." in parsed.username:
+                new_username = parsed.username.replace(".", "%2E")
+                # Reconstruct netloc with encoded username
+                netloc = f"{new_username}:{parsed.password}@{parsed.hostname}"
+                if parsed.port:
+                    netloc += f":{parsed.port}"
+                parsed = parsed._replace(netloc=netloc)
+                env_db_url = urllib.parse.urlunparse(parsed)
+                print("[CONFIG] Applied Supabase Pooler username patch.")
+        except Exception as e:
+            print(f"[CONFIG] Warning: Pooler patch failed: {e}")
     
     DATABASE_URL = env_db_url
 else:

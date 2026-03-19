@@ -37,14 +37,16 @@ app.include_router(submissions.router)
 def startup():
     """Initialize database on startup."""
     import os
-    logger.info(f"Starting CodePTITclone, BASE_DIR={BASE_DIR}")
-    
-    # Check if we are using a remote Postgres DB or local SQLite
-    is_sqlite = "sqlite" in os.getenv("DATABASE_URL", "") or not os.getenv("DATABASE_URL")
+    logger.info(f"Starting CodePTITclone (Render/Docker)")
     
     logger.info(f"Initializing DB...")
-    init_db()
-    logger.info("Database initialized successfully")
+    try:
+        init_db()
+        logger.info("Database initialized successfully.")
+    except Exception as e:
+        logger.error(f"FAILED TO INITIALIZE DB ON STARTUP: {e}")
+        # We don't exit here, let the first request try again or fail gracefully
+        pass
 
 
 import time
