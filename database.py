@@ -4,27 +4,30 @@ Database setup and session management.
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, declarative_base
 from config import DATABASE_URL
+import logging
 
+logger = logging.getLogger(__name__)
 is_sqlite = DATABASE_URL.startswith("sqlite")
 
 if is_sqlite:
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 else:
-    # Production PostgreSQL (Supabase)
-    # Use pool_pre_ping to detect stale connections
-    # Use pool_recycle to close connections after 5 minutes
-    # Use a small pool to avoid connection limits
+    # Production PostgreSQL (Supabase Pooler)
+    # pool_pre_ping: test connection before using (catches stale SSL)
+    # pool_recycle: close connections older than 180s (prevents SSL timeout)  
+    # pool_size=5: keep pool small for Supabase free tier
     engine = create_engine(
         DATABASE_URL,
-        pool_size=2,
-        max_overflow=3,
+        pool_size=5,
+        max_overflow=5,
         pool_pre_ping=True,
-        pool_recycle=300,
+        pool_recycle=180,
+        pool_timeout=10,
         connect_args={"sslmode": "require", "connect_timeout": 10}
     )
 
 @event.listens_for(engine, "connect")
-def pragma_on_connect(dbapi_con, con_record):
+def on_connect(dbapi_con, con_record):
     if is_sqlite:
         cursor = dbapi_con.cursor()
         cursor.execute("PRAGMA journal_mode=WAL")
@@ -47,4 +50,7 @@ def get_db():
 def init_db():
     """Create all tables."""
     import models  # noqa: F401
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        logger.warning(f"init_db failed (tables may already exist): {e}")
