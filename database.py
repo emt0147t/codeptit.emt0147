@@ -7,10 +7,18 @@ from config import DATABASE_URL
 
 is_sqlite = DATABASE_URL.startswith("sqlite")
 
+from sqlalchemy.pool import NullPool
+
 if is_sqlite:
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 else:
-    engine = create_engine(DATABASE_URL)
+    # Use NullPool for Supabase/Render to avoid "SSL connection closed"
+    # every request gets a new connection, and we verify it with pre_ping
+    engine = create_engine(
+        DATABASE_URL,
+        poolclass=NullPool,
+        pool_pre_ping=True
+    )
 
 @event.listens_for(engine, "connect")
 def pragma_on_connect(dbapi_con, con_record):
