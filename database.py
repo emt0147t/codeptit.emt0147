@@ -10,14 +10,7 @@ is_sqlite = DATABASE_URL.startswith("sqlite")
 if is_sqlite:
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 else:
-    # Supabase/Render optimization: use smaller pool and pre-ping
-    engine = create_engine(
-        DATABASE_URL,
-        pool_size=3,
-        max_overflow=2,
-        pool_pre_ping=True,
-        pool_recycle=300
-    )
+    engine = create_engine(DATABASE_URL)
 
 @event.listens_for(engine, "connect")
 def pragma_on_connect(dbapi_con, con_record):

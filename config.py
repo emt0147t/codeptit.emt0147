@@ -7,8 +7,6 @@ from pathlib import Path
 # Base directory
 BASE_DIR = Path(__file__).resolve().parent
 
-import urllib.parse
-
 # Database Configuration
 env_db_url = os.getenv("DATABASE_URL")
 
@@ -16,13 +14,6 @@ if env_db_url:
     # Render/Supabase use postgres://, SQLAlchemy requires postgresql://
     if env_db_url.startswith("postgres://"):
         env_db_url = env_db_url.replace("postgres://", "postgresql://", 1)
-    
-    # Simple timeout additions
-    if "?" not in env_db_url:
-        env_db_url += "?connect_timeout=30"
-    else:
-        env_db_url += "&connect_timeout=30"
-        
     DATABASE_URL = env_db_url
 else:
     # 2. Render Free Tier fallback
