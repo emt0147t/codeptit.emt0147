@@ -12,18 +12,15 @@ is_sqlite = DATABASE_URL.startswith("sqlite")
 if is_sqlite:
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 else:
-    # Production PostgreSQL (Supabase Pooler)
-    # pool_pre_ping: test connection before using (catches stale SSL)
-    # pool_recycle: close connections older than 180s (prevents SSL timeout)  
-    # pool_size=5: keep pool small for Supabase free tier
+    # Production PostgreSQL (Supabase via Pgbouncer / Pooler)
+    # NullPool = new connection per request (no persistent pool)
+    # This is safest for Supabase Pooler which uses pgbouncer
+    # and can drop connections at any time.
+    from sqlalchemy.pool import NullPool
     engine = create_engine(
         DATABASE_URL,
-        pool_size=5,
-        max_overflow=5,
-        pool_pre_ping=True,
-        pool_recycle=180,
-        pool_timeout=10,
-        connect_args={"sslmode": "require", "connect_timeout": 10}
+        poolclass=NullPool,
+        connect_args={"sslmode": "require", "connect_timeout": 5}
     )
 
 @event.listens_for(engine, "connect")
@@ -48,9 +45,9 @@ def get_db():
 
 
 def init_db():
-    """Create all tables."""
+    """Create all tables (safe to call multiple times)."""
     import models  # noqa: F401
     try:
         Base.metadata.create_all(bind=engine)
     except Exception as e:
-        logger.warning(f"init_db failed (tables may already exist): {e}")
+        logger.warning(f"init_db skipped (tables likely exist): {e}")

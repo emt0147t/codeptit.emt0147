@@ -58,17 +58,21 @@ def debug_db():
 @app.on_event("startup")
 def startup():
     """Initialize database on startup."""
-    import os
-    logger.info(f"Starting CodePTITclone (Render/Docker)")
+    from config import DATABASE_URL as db_url
+    logger.info(f"Starting CodePTITclone")
     
-    logger.info(f"Initializing DB...")
-    try:
-        init_db()
-        logger.info("Database initialized successfully.")
-    except Exception as e:
-        logger.error(f"FAILED TO INITIALIZE DB ON STARTUP: {e}")
-        # We don't exit here, let the first request try again or fail gracefully
-        pass
+    # Only run create_all for SQLite (local dev)
+    # For PostgreSQL (production), tables already exist
+    if db_url.startswith("sqlite"):
+        logger.info("SQLite detected, running init_db()...")
+        try:
+            init_db()
+            logger.info("Database initialized successfully.")
+        except Exception as e:
+            logger.error(f"init_db failed: {e}")
+    else:
+        logger.info("PostgreSQL detected, skipping init_db (tables exist).")
+
 
 
 import time
