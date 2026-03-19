@@ -33,35 +33,6 @@ app.include_router(problems.router)
 app.include_router(submissions.router)
 
 
-@app.get("/debug-db")
-def debug_db(db: Session = Depends(get_db)):
-    """Diagnose DB connection issues."""
-    try:
-        from sqlalchemy import text
-        from database import engine
-        db.execute(text("SELECT 1"))
-        # Get info from engine URL
-        db_host = engine.url.host
-        db_name = engine.url.database
-        db_user = engine.url.username
-        return {
-            "status": "success", 
-            "message": "Database is connected!",
-            "host": db_host,
-            "database": db_name,
-            "user": db_user,
-            "port": engine.url.port
-        }
-    except Exception as e:
-        return {
-            "status": "error", 
-            "error_type": type(e).__name__,
-            "message": str(e)
-        }
-    finally:
-        db.close()
-
-
 @app.on_event("startup")
 def startup():
     """Initialize database on startup."""
