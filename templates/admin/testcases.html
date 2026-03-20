@@ -139,37 +139,32 @@
         </form>
     </div>
 
-    <!-- Ollama Local AI Panel -->
+    <!-- AI Magic Panel (Gemini API) -->
     <div id="panel-ai"
         class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg shadow-sm border border-indigo-200 p-6 mb-6">
         <div class="flex items-start gap-4">
             <div class="text-4xl">🤖</div>
             <div class="flex-1">
-                <div class="flex items-center gap-3 mb-1">
-                    <h3 class="text-lg font-bold text-indigo-900">Sinh Testcase Bằng Ollama AI (Local)</h3>
-                    <span id="ollama-status-badge"
-                        class="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-500">Đang kiểm tra...</span>
-                </div>
-                <p class="text-sm text-indigo-700 mb-2">
-                    Chạy <strong>Ollama Local AI</strong> trên máy tính của bạn — <strong>không giới hạn, không cần API key</strong>.
-                    AI sẽ đọc đề bài <code>{{ problem.code }}</code>, tự viết Input Generator và Solution Code,
-                    chạy sinh ra các cặp Testcase hoàn chỉnh.
+                <h3 class="text-lg font-bold text-indigo-900 mb-1">Sinh Testcase Tự Động Bằng AI (Chỉ 1 Click)</h3>
+                <p class="text-sm text-indigo-700 mb-4">
+                    Hệ thống sẽ dùng <strong>Google Gemini API</strong> tự động đọc đề bài, phân tích giới hạn của
+                    <code>{{ problem.code }}</code>, tự lập trình ra bộ sinh Input chuẩn và Code giải đúng, sau đó ép ra
+                    các cặp Testcase hoàn hảo. Không cần bạn viết bất kỳ dòng code nào!
                 </p>
-                <p id="ollama-model-info" class="text-xs text-indigo-500 mb-3"></p>
                 <form method="POST" action="/admin/problem/{{ problem.code }}/testcases/ai-generate"
                     class="flex items-center gap-4"
-                    onsubmit="this.querySelector('button[type=submit]').innerHTML='🔄 AI đang phân tích đề và lập trình... (30-60s)'; this.querySelector('button[type=submit]').classList.add('opacity-75', 'cursor-not-allowed')">
+                    onsubmit="this.querySelector('button[type=submit]').innerHTML='🔄 AI đang phân tích đề và lập trình... (20-30s)'; this.querySelector('button[type=submit]').classList.add('opacity-75', 'cursor-not-allowed')">
                     <div class="flex items-center gap-2">
                         <label class="text-sm font-medium text-indigo-800">Số lượng test:</label>
                         <input type="number" name="num_tests" value="10" min="1" max="50"
                             class="w-20 px-3 py-2 border border-indigo-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-indigo-500 outline-none">
                     </div>
-                    <button type="submit" id="btn-ollama-generate"
-                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm transition font-bold shadow-md shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed">
-                        🤖 Tạo Test Bằng Ollama AI
+                    <button type="submit"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm transition font-bold shadow-md shadow-indigo-200">
+                        ✨ Tạo Test Bằng AI Ngay
                     </button>
                     <button type="button" onclick="showTab('generate')"
-                        class="text-xs text-indigo-500 hover:underline">Hoặc tự viết code (Thủ
+                        class="text-xs text-indigo-500 hover:underline">Hoặc tự viết code Python/C++ sinh test (Thủ
                         công)</button>
                 </form>
             </div>
@@ -353,36 +348,5 @@
             }
         });
     }
-
-    // Check Ollama status on page load
-    (function checkOllamaStatus() {
-        var badge = document.getElementById('ollama-status-badge');
-        var modelInfo = document.getElementById('ollama-model-info');
-        var btn = document.getElementById('btn-ollama-generate');
-        fetch('/api/ollama-status')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.status === 'online' && data.model_available) {
-                    badge.textContent = 'Online';
-                    badge.className = 'text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium';
-                    modelInfo.textContent = 'Model: ' + data.current_model + ' | Local';
-                } else if (data.status === 'online' && !data.model_available) {
-                    badge.textContent = 'Model missing';
-                    badge.className = 'text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium';
-                    modelInfo.textContent = 'Run: ollama pull ' + data.current_model;
-                    if (btn) btn.disabled = true;
-                } else {
-                    badge.textContent = 'Offline';
-                    badge.className = 'text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-medium';
-                    modelInfo.textContent = data.error || 'Ollama not running';
-                    if (btn) btn.disabled = true;
-                }
-            })
-            .catch(function() {
-                badge.textContent = 'Offline';
-                badge.className = 'text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-medium';
-                modelInfo.textContent = 'Production (no local Ollama)';
-            });
-    })();
 </script>
 {% endblock %}

@@ -534,7 +534,7 @@ async def ai_generate_testcases(
     num_tests: int = Form(10),
     db: Session = Depends(get_db)
 ):
-    """Generate testcases with Ollama Local AI."""
+    """Generate testcases with Gemini AI completely autonomously."""
     user = require_admin(request, db)
     problem = db.query(Problem).filter(Problem.code == problem_code).first()
     if not problem:
@@ -547,15 +547,15 @@ async def ai_generate_testcases(
         sys.path.insert(0, tools_path)
 
     try:
-        from ollama_testcase_gen import ollama_generate_testcases
-        count, error_msg = ollama_generate_testcases(problem_code, min(50, max(1, num_tests)))
+        from auto_testcase_gen import auto_generate_testcases as ai_gen
+        count, error_msg = ai_gen(problem_code, min(50, max(1, num_tests)))
         if count == 0:
             msg = f"Thất bại:\n{error_msg}"
         else:
             if error_msg:
                 msg = f"Sinh được {count} test.\nCó cảnh báo:\n{error_msg}"
             else:
-                msg = f"Thành công 🤖 Ollama AI sinh {count} test cases!"
+                msg = f"Thành công 🤖 Gemini AI sinh {count} test cases!"
     except Exception as e:
         msg = f"Lỗi hệ thống: {str(e)}"
 
@@ -564,6 +564,7 @@ async def ai_generate_testcases(
         url=f"/admin/problem/{problem_code}/testcases?msg={quote(msg)}",
         status_code=302
     )
+
 
 
 @router.get("/api/ollama-status")
