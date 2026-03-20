@@ -2,6 +2,17 @@
 {% block title %}{{ problem.code }} - {{ problem.title }}{% endblock %}
 {% block main_class %}w-full{% endblock %}
 
+{% block head_libs %}
+<!-- Markdown & Math Support (only loaded on this page) -->
+<link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown-light.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+{% endblock %}
+
 {% block head %}
 <!-- CodeMirror -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
