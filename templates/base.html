@@ -213,11 +213,55 @@
             transform: translateY(-4px);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
         }
+    
+        /* Page Loading Bar */
+        #page-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #c82333, #ef4444, #f97316);
+            z-index: 99999;
+            box-shadow: 0 0 8px rgba(200,35,51,0.5);
+        }
+        #page-loader.loading {
+            width: 70%;
+            transition: width 8s cubic-bezier(0.1, 0.5, 0.3, 1);
+        }
+        #page-loader.done {
+            width: 100%;
+            opacity: 0;
+            transition: width 0.2s ease, opacity 0.3s ease 0.2s;
+        }
     </style>
     {% block head %}{% endblock %}
 </head>
 
 <body class="h-full bg-gradient-to-br from-gray-50 via-white to-gray-100 flex flex-col min-h-screen">
+    <div id="page-loader"></div>
+    <script>
+    (function(){
+        var loader = document.getElementById('page-loader');
+        document.addEventListener('click', function(e) {
+            var a = e.target.closest('a');
+            if (a && a.href && a.href.indexOf('javascript') !== 0 && !a.target && a.hostname === location.hostname) {
+                loader.className = '';
+                void loader.offsetWidth;
+                loader.className = 'loading';
+            }
+        });
+        document.addEventListener('submit', function() {
+            loader.className = '';
+            void loader.offsetWidth;
+            loader.className = 'loading';
+        });
+        window.addEventListener('pageshow', function() {
+            loader.className = 'done';
+        });
+    })();
+    </script>
+
     <!-- Navbar -->
     <nav class="glass sticky top-0 z-50 border-b border-gray-200/60 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
