@@ -19,7 +19,8 @@ else:
     engine = create_engine(
         DATABASE_URL,
         poolclass=NullPool,
-        connect_args={"sslmode": "require", "connect_timeout": 5}
+        pool_pre_ping=True,
+        connect_args={"sslmode": "require", "connect_timeout": 10}
     )
 
 @event.listens_for(engine, "connect")
