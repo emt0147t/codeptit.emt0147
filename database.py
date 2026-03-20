@@ -35,7 +35,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
-def _create_tested_session(max_retries=3):
+def _create_tested_session(max_retries=5):
     """Create a session and verify the connection works, with retries."""
     last_error = None
     for attempt in range(max_retries):
@@ -51,8 +51,9 @@ def _create_tested_session(max_retries=3):
                 pass
             error_msg = str(e).lower()
             if "ssl" in error_msg or "closed" in error_msg or "connection" in error_msg:
-                logger.warning(f"DB connect attempt {attempt+1}/{max_retries} failed: {e}")
-                time.sleep(0.5)
+                wait_time = 1 + attempt  # 1s, 2s, 3s, 4s progressive
+                logger.warning(f"DB connect attempt {attempt+1}/{max_retries} failed: {e}. Retrying in {wait_time}s...")
+                time.sleep(wait_time)
                 continue
             else:
                 raise
