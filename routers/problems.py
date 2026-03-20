@@ -534,7 +534,7 @@ async def ai_generate_testcases(
     num_tests: int = Form(10),
     db: Session = Depends(get_db)
 ):
-    """Generate testcases with Gemini AI completely autonomously."""
+    """Generate testcases with Ollama Local AI."""
     user = require_admin(request, db)
     problem = db.query(Problem).filter(Problem.code == problem_code).first()
     if not problem:
@@ -547,23 +547,37 @@ async def ai_generate_testcases(
         sys.path.insert(0, tools_path)
 
     try:
-        from auto_testcase_gen import auto_generate_testcases as ai_gen
-        count, error_msg = ai_gen(problem_code, min(50, max(1, num_tests)))
+        from ollama_testcase_gen import ollama_generate_testcases
+        count, error_msg = ollama_generate_testcases(problem_code, min(50, max(1, num_tests)))
         if count == 0:
             msg = f"Thất bại:\n{error_msg}"
         else:
             if error_msg:
                 msg = f"Sinh được {count} test.\nCó cảnh báo:\n{error_msg}"
             else:
-                msg = f"Thành công 🤖 AI sinh {count} test cases!"
+                msg = f"Thành công 🤖 Ollama AI sinh {count} test cases!"
     except Exception as e:
-        msg = f"Lỗi hệ thống không lường trước: {str(e)}"
+        msg = f"Lỗi hệ thống: {str(e)}"
 
     from urllib.parse import quote
     return RedirectResponse(
         url=f"/admin/problem/{problem_code}/testcases?msg={quote(msg)}",
         status_code=302
     )
+
+
+@router.get("/api/ollama-status")
+async def ollama_status(request: Request, db: Session = Depends(get_db)):
+    """Check Ollama availability for the admin panel."""
+    import sys, os
+    tools_path = os.path.join(BASE_DIR, "tools")
+    if tools_path not in sys.path:
+        sys.path.insert(0, tools_path)
+    try:
+        from ollama_testcase_gen import check_ollama_status
+        return check_ollama_status()
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
 
 @router.get("/admin/testcase/{testcase_id}/edit")
 async def edit_testcase_page(
